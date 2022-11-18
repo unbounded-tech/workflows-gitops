@@ -7,4 +7,4 @@ on:
 jobs:
 
   release:
-    uses: CloudNativeEntrepreneur/actions/.github/workflows/github-release.yaml
+    uses: CloudNativeEntrepreneur/actions/.github/workflows/github-release.yaml@main
