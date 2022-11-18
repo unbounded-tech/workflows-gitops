@@ -2,7 +2,11 @@ name: node-semantic-release
 
 on:
   workflow_call:
-    secrets: inherit
+    secrets:
+      GITHUB_TOKEN:
+        required: true
+      NPM_TOKEN:
+        required: true
 
 jobs:
   node-semantic-release:
