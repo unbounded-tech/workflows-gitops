@@ -8,7 +8,7 @@ on:
 
 jobs:
   node-semantic-release:
-    name: Release
+    name: Semantic Release
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
