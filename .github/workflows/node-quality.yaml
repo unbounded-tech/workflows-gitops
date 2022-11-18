@@ -1,10 +1,7 @@
 name: node-quality
 
 on:
-
-  pull_request:
-    branches:
-      - main
+  workflow_call:
 
 jobs:
 
