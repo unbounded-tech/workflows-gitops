@@ -1,11 +1,14 @@
-name: application-with-helm-release
+name: github-release
 on:
-  push:
-    branches:
-    - main
+  workflow_call:
+    secrets:
+      GH_ORG_TOKEN:
+        required: true
+    
 jobs:
 
-  application-with-helm-release:
+  github-release:
+    name: Github Release
     runs-on: ubuntu-latest
 
     permissions:
@@ -26,7 +29,7 @@ jobs:
         persist-credentials: false
         fetch-depth: 0
 
-    - name: Application Version
+    - name: Version
       id: version
       uses: paulhatch/semantic-version@v4.0.3
       with:
@@ -39,23 +42,6 @@ jobs:
       uses: mikepenz/release-changelog-builder-action@v3
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-    - name: Update version in helm values
-      uses: mikefarah/yq@master
-      with:
-        cmd: yq -i '.image.tag = "${{ steps.version.outputs.version_tag }}"' helm/values.yaml
-    
-    - name: Update version in helm chart
-      uses: mikefarah/yq@master
-      with:
-        cmd: yq -i '.version = "${{ steps.version.outputs.version_tag }}"' helm/Chart.yaml
-
-    - name: Commit changes
-      run: |
-        git config --local user.email "github-actions[bot]@users.noreply.github.com"
-        git config --local user.name "github-actions[bot]"
-        git commit -am "chore: set version to ${{ steps.version.outputs.version_tag }}"
-        git tag -a ${{ steps.version.outputs.version_tag }} -m "${{ steps.version.outputs.version_tag }}"
     
     - name: Push changes
       uses: ad-m/github-push-action@master

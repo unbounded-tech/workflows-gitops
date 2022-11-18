@@ -1,0 +1,10 @@
+name: release
+on:
+  push:
+    branches:
+    - main
+
+jobs:
+
+  release:
+    uses: CloudNativeEntrepreneur/actions/.github/workflows/github-release.yaml

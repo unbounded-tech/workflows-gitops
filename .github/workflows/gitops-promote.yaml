@@ -1,11 +1,19 @@
 name: gitops-promote
+
 on:
-  push:
-    tags:
-    - v*.*.*
+  workflow_call:
+    inputs:
+      environment_repository:
+        type: string
+        required: true
+    secrets:
+      github_org_token:
+        required: true
+
 jobs:
 
   gitops-promote:
+    name: GitOps Promote
     runs-on: ubuntu-latest
 
     permissions:
@@ -15,7 +23,7 @@ jobs:
     - name: Checkout production environment
       uses: actions/checkout@v3
       with:
-        repository: cloudnativeentrepreneur/example-prod-env
+        repository: ${{ inputs.environment_repository }}
         persist-credentials: false
         fetch-depth: 0
 
@@ -42,5 +50,5 @@ jobs:
     - name: Push prod
       uses: ad-m/github-push-action@master
       with:
-        github_token: ${{ secrets.GH_ORG_TOKEN }}
-        repository: cloudnativeentrepreneur/example-prod-env
+        github_token: ${{ secrets.github_org_token }}
+        repository: ${{ inputs.environment_repository }}

@@ -1,11 +1,18 @@
 name: gitops-preview-cleanup
 on:
-  pull_request:
-    types: [ closed ]
+  workflow_call:
+    inputs:
+      environment_repository:
+        required: true
+        type: string
+    secrets:
+      GH_ORG_TOKEN:
+        required: true
 
 jobs:
   
   gitops-preview-cleanup:
+    name: Gitops Preview Cleanup
     runs-on: ubuntu-latest
 
     permissions:
@@ -18,7 +25,7 @@ jobs:
     - name: Checkout Preview Environments Project
       uses: actions/checkout@v3
       with: 
-        repository: cloudnativeentrepreneur/example-preview-envs
+        repository: ${{ inputs.environment_repository }}
         persist-credentials: false
 
     - name: Commit Preview Env Changes
@@ -33,7 +40,7 @@ jobs:
       uses: ad-m/github-push-action@master
       with:
         github_token: ${{ secrets.GH_ORG_TOKEN }}
-        repository: cloudnativeentrepreneur/example-preview-envs
+        repository: ${{ inputs.environment_repository }}
 
     - name: Create comment about garbage collection
       uses: peter-evans/create-or-update-comment@v2
