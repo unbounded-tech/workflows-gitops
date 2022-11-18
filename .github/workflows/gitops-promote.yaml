@@ -1,0 +1,46 @@
+name: gitops-promote
+on:
+  push:
+    tags:
+    - v*.*.*
+jobs:
+
+  gitops-promote:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+
+    steps:
+    - name: Checkout production environment
+      uses: actions/checkout@v3
+      with:
+        repository: cloudnativeentrepreneur/example-prod-env
+        persist-credentials: false
+        fetch-depth: 0
+
+    - name: Update prod environment
+      uses: mikefarah/yq@master
+      with:
+        cmd: yq -i '.spec.source.targetRevision = "${{ github.ref_name }}"' helm/templates/${{ github.event.repository.name }}.yaml
+
+    - name: Commit Prod Env Changes
+      run: |
+        if output=$(git status --porcelain) && [ -z "$output" ]; then
+          # Working directory clean
+
+          echo "No changes to commit"
+        else 
+          # Uncommitted changes
+
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"   
+          git add -A
+          git commit -m "feat: Promoting ${{ github.event.repository.name }} to ${{ github.ref_name }}"
+        fi
+
+    - name: Push prod
+      uses: ad-m/github-push-action@master
+      with:
+        github_token: ${{ secrets.GH_ORG_TOKEN }}
+        repository: cloudnativeentrepreneur/example-prod-env
