@@ -33,15 +33,9 @@ jobs:
     - name: previous tag
       run: |
         # set previous_tag to the last tag in the repo
-        previous_tag=$(git describe --abbrev=0 --tags)
-
-        # if previous_tag contains "fatal" then there are no tags in the repo
-        # so set previous_tag to nothing, otherwise export it to GITHUB_ENV
-        if [[ $previous_tag == *"fatal"* ]]; then
-          echo "previous_tag=" >> $GITHUB_ENV
-        else
-          echo "previous_tag=$previous_tag" >> $GITHUB_ENV
-        fi
+        # or if the command throws an error, set it to nothing
+        previous_tag=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+        echo "previous_tag=$previous_tag" >> $GITHUB_ENV
 
     - name: Version
       id: version
