@@ -6,7 +6,7 @@ Most jobs expect a Personal Access Token to be set as an organizational secret n
 * repo
 * write:packages
 
-You can generate this token here: https://github.com/settings/tokens/new?scopes=repo,read:packages
+You can generate this token here: https://github.com/settings/tokens/new?scopes=repo,write:packages
 
 ## Example
 
