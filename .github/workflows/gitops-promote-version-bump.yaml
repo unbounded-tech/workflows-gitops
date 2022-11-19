@@ -16,7 +16,7 @@ on:
 jobs:
 
   gitops-promote-version-bump:
-    name: GitOps Promote Version Bump
+    name: GitOps Promote - Version Bump
     runs-on: ubuntu-latest
 
     permissions:
