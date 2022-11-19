@@ -2,10 +2,10 @@ name: github-with-helm-release
 on:
   workflow_call:
     inputs: 
-      previousRelease:
-        type: string
-        required: false
       updateImageTags:
+        type: boolean
+        required: false
+      updateChartVersion:
         type: boolean
         required: false
     secrets:
@@ -49,7 +49,7 @@ jobs:
         bump_each_commit: true
 
     - name: Build Changelog
-      if: inputs.previousRelease
+      if: env.previousRelease
       id: changelog
       uses: mikepenz/release-changelog-builder-action@v3
       env:
@@ -62,6 +62,7 @@ jobs:
         cmd: yq -i '.image.tag = "${{ steps.version.outputs.version_tag }}"' helm/values.yaml
     
     - name: Update version in helm chart
+      if: inputs.updateChartVersion
       uses: mikefarah/yq@master
       with:
         cmd: yq -i '.version = "${{ steps.version.outputs.version_tag }}"' helm/Chart.yaml
