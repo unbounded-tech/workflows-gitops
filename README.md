@@ -30,6 +30,73 @@ jobs:
       helm: true # optional, set to release helm chart
 ```
 
+### Gitops Preview + Helm Quality
+
+*.github/workflows/pr.yaml*
+```yaml
+name: pr
+
+on:
+
+  pull_request:
+    branches:
+      - main
+
+jobs:
+
+  helm-quality:
+    uses: CloudNativeEntrepreneur/actions/.github/workflows/helm-quality.yaml@main
+    secrets: inherit
+    with:
+      helm_path: helm
+  
+  preview-helm-quality:
+    uses: CloudNativeEntrepreneur/actions/.github/workflows/helm-quality.yaml@main
+    secrets: inherit
+    with:
+      helm_path: preview/helm
+
+  preview:
+    needs:
+    - helm-quality
+    - preview-helm-quality
+    uses: CloudNativeEntrepreneur/actions/.github/workflows/gitops-preview.yaml@main
+    secrets: inherit
+    with:
+      environment_repository: CloudNativeEntrepreneur/example-preview-envs
+      comment: |
+        Your preview environment has been published! :rocket:
+
+        It may take a few minutes to spin up.
+
+        You can view the Preview contents with `kubectl`:
+
+        ```bash
+        kubectl get ns ${{ github.event.repository.name }}-pr-${{ github.event.pull_request.number }}-preview
+        kubectl get sa -n ${{ github.event.repository.name }}-pr-${{ github.event.pull_request.number }}-preview
+        kubectl get externalsecret -n ${{ github.event.repository.name }}-pr-${{ github.event.pull_request.number }}-preview
+        ```
+```
+
+### Gitops Preview Cleanup
+
+*.github/workflows/pr-close.yaml*
+
+```yaml
+name: pr-close
+on:
+  pull_request:
+    types: [ closed ]
+
+jobs:
+  
+  preview-cleanup:
+    uses: CloudNativeEntrepreneur/actions/.github/workflows/gitops-preview-cleanup.yaml@main
+    secrets: inherit
+    with:
+      environment_repository: CloudNativeEntrepreneur/example-preview-envs
+```
+
 ### Node Quality
 
 *.github/workflows/pr.yaml*
