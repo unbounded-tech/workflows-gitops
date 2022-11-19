@@ -2,10 +2,10 @@ name: github-release
 on:
   workflow_call:
     inputs: 
-      updateImageTags:
+      container:
         type: boolean
         required: false
-      updateChartVersion:
+      helm:
         type: boolean
         required: false
     secrets:
@@ -45,19 +45,19 @@ jobs:
         token: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Update version in helm values
-      if: inputs.updateImageTags
+      if: inputs.container
       uses: mikefarah/yq@master
       with:
         cmd: yq -i '.image.tag = "${{ steps.version.outputs.version_tag }}"' helm/values.yaml
     
     - name: Update version in helm chart
-      if: inputs.updateChartVersion
+      if: inputs.helm
       uses: mikefarah/yq@master
       with:
         cmd: yq -i '.version = "${{ steps.version.outputs.version_tag }}"' helm/Chart.yaml
 
     - name: Commit changes
-      if: inputs.updateChartVersion || inputs.updateImageTags
+      if: inputs.helm || inputs.container
       run: |
         git config --local user.email "github-actions[bot]@users.noreply.github.com"
         git config --local user.name "github-actions[bot]"
