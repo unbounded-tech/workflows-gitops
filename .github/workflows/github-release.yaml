@@ -36,26 +36,10 @@ jobs:
       uses: jaywcjlove/changelog-generator@main
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
-
-  release:
-    name: Github Release
-    runs-on: ubuntu-latest
-    if: always()
-
-    permissions:
-      packages: write
-      contents: write
-
-    steps:
-
-    - name: Checkout
-      uses: actions/checkout@v3
-      with:
-        persist-credentials: false
-        fetch-depth: 0
     
     - name: Push to tag
       uses: ad-m/github-push-action@master
+      if: always()
       with:
         github_token: ${{ secrets.GH_ORG_TOKEN }}
         branch: ${{ steps.version.outputs.version_tag }}
@@ -63,6 +47,7 @@ jobs:
 
     - name: Release
       uses: softprops/action-gh-release@v1
+      if: always()
       with:
         tag_name: ${{ steps.version.outputs.version_tag }}
         generate_release_notes: true
