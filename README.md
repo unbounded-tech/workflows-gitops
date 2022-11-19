@@ -20,3 +20,18 @@ jobs:
     secrets:
       GH_ORG_TOKEN: ${{ secrets.GH_ORG_TOKEN }}
 ```
+
+### Node Quality
+
+```yaml
+name: Pull Request
+
+on:
+  pull_request:
+    branches: [ main ]
+
+jobs:
+
+  quality:
+    uses: CloudNativeEntrepreneur/actions/.github/workflows/node-quality.yaml@main
+```
