@@ -52,7 +52,6 @@ jobs:
         bump_each_commit: true
 
     - name: Generate changelog
-
       id: changelog
       if: env.previous_tag
       uses: jaywcjlove/changelog-generator@main
