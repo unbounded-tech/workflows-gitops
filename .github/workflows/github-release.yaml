@@ -14,8 +14,8 @@ on:
     
 jobs:
 
-  verion:
-    name: Version
+  release:
+    name: Github Release
     runs-on: ubuntu-latest
 
     permissions:
