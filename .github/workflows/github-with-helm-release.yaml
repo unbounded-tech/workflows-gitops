@@ -27,7 +27,10 @@ jobs:
     - name: downcase REPO
       run: |
         echo "REPO=${GITHUB_REPOSITORY,,}" >>${GITHUB_ENV}
-        echo "${{ inputs.previousRelease }}"
+        echo "PREVIOUS_RELEASE=`git describe --tags --abbrev=0`" >>${GITHUB_ENV} 
+
+        echo $REPO
+        echo $PREVIOUS_RELEASE
     # - name: use REPO
     #   run: echo "The value of REPO is: ${{ env.REPO }}"
 
