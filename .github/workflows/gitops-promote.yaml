@@ -73,3 +73,5 @@ jobs:
     - name: Create Pull Request
       if: inputs.pull_request
       uses: peter-evans/create-pull-request@v4
+      with:
+        branch: promote/${{ github.event.repository.name }}-${{ github.ref_name }}
