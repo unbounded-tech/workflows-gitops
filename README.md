@@ -97,7 +97,9 @@ jobs:
       environment_repository: CloudNativeEntrepreneur/example-preview-envs
 ```
 
-### Gitops Promote
+### Gitops Promote - Version Bump
+
+The application must already exist inside of the specified environment repository.
 
 ```yaml
 name: promote
@@ -108,10 +110,11 @@ on:
 
 jobs:
   promote:
-    uses: CloudNativeEntrepreneur/actions/.github/workflows/gitops-promote.yaml@main
+    uses: CloudNativeEntrepreneur/actions/.github/workflows/gitops-promote-version-bump.yaml@main
     secrets: inherit
     with:
       environment_repository: CloudNativeEntrepreneur/example-prod-env
+      pull_request: false # Optional - set to true to create pull request instead of pushing to the default branch
 ```
 
 ### Node Quality
