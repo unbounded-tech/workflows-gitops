@@ -30,10 +30,10 @@ jobs:
         persist-credentials: false
         fetch-depth: 0
 
-    - name: Create PR branch
-      if: inputs.pull_request
-      run: |
-        git checkout -b promote/${{ github.event.repository.name }}-${{ github.ref_name }}
+    # - name: Create PR branch
+    #   if: inputs.pull_request
+    #   run: |
+    #     git checkout -b promote/${{ github.event.repository.name }}-${{ github.ref_name }}
 
     - name: Update prod environment
       uses: mikefarah/yq@master
@@ -62,13 +62,13 @@ jobs:
         github_token: ${{ secrets.GH_ORG_TOKEN }}
         repository: ${{ inputs.environment_repository }}
     
-    - name: Push branch
-      if: inputs.pull_request
-      uses: ad-m/github-push-action@master
-      with:
-        github_token: ${{ secrets.GH_ORG_TOKEN }}
-        repository: ${{ inputs.environment_repository }}
-        branch: promote/${{ github.event.repository.name }}-${{ github.ref_name }}
+    # - name: Push branch
+    #   if: inputs.pull_request
+    #   uses: ad-m/github-push-action@master
+    #   with:
+    #     github_token: ${{ secrets.GH_ORG_TOKEN }}
+    #     repository: ${{ inputs.environment_repository }}
+    #     branch: promote/${{ github.event.repository.name }}-${{ github.ref_name }}
 
     - name: Create Pull Request
       if: inputs.pull_request
