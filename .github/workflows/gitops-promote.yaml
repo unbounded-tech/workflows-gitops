@@ -6,6 +6,9 @@ on:
       environment_repository:
         type: string
         required: true
+      pull_request:
+        type: boolean
+        required: false
     secrets:
       GH_ORG_TOKEN:
         required: true
@@ -27,6 +30,11 @@ jobs:
         persist-credentials: false
         fetch-depth: 0
 
+    - name: Create PR branch
+      if: inputs.pull_request
+      run: |
+        git checkout -b promote/${{ github.event.repository.name }}-${{ github.ref_name }}
+
     - name: Update prod environment
       uses: mikefarah/yq@master
       with:
@@ -47,8 +55,21 @@ jobs:
           git commit -m "feat(${{ github.event.repository.name }}): Promoting ${{ github.event.repository.name }} to ${{ github.ref_name }}"
         fi
 
-    - name: Push prod
+    - name: Push main
+      if: inputs.pull_request == false
       uses: ad-m/github-push-action@master
       with:
         github_token: ${{ secrets.GH_ORG_TOKEN }}
         repository: ${{ inputs.environment_repository }}
+    
+    - name: Push branch
+      if: inputs.pull_request
+      uses: ad-m/github-push-action@master
+      with:
+        github_token: ${{ secrets.GH_ORG_TOKEN }}
+        repository: ${{ inputs.environment_repository }}
+        branch: promote/${{ github.event.repository.name }}-${{ github.ref_name }}
+
+    - name: Create Pull Request
+      if: inputs.pull_request
+      uses: peter-evans/create-pull-request@v4
