@@ -57,14 +57,6 @@ jobs:
       uses: jaywcjlove/changelog-generator@main
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
-    
-    - name: Push to tag
-      uses: ad-m/github-push-action@master
-      if: always()
-      with:
-        github_token: ${{ secrets.GH_ORG_TOKEN }}
-        branch: ${{ steps.version.outputs.version_tag }}
-        tags: true
 
     - name: Update image.tag in helm values (Optional)
       if: inputs.container
@@ -85,10 +77,10 @@ jobs:
         git config --local user.name "github-actions[bot]"
         git commit -am "chore: set version to ${{ steps.version.outputs.version_tag }}"
         git tag -a ${{ steps.version.outputs.version_tag }} -m "${{ steps.version.outputs.version_tag }}"
-
-    - name: Push to version updates to tag (Optional)
+    
+    - name: Push to tag
       uses: ad-m/github-push-action@master
-      if: inputs.helm || inputs.container
+      if: always()
       with:
         github_token: ${{ secrets.GH_ORG_TOKEN }}
         branch: ${{ steps.version.outputs.version_tag }}
