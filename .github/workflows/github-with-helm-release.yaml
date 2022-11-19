@@ -1,6 +1,13 @@
 name: github-with-helm-release
 on:
   workflow_call:
+    inputs: 
+      previousRelease:
+        type: string
+        required: false
+      updateImageTags:
+        type: boolean
+        required: false
     secrets:
       GH_ORG_TOKEN:
         required: true
@@ -38,12 +45,14 @@ jobs:
         bump_each_commit: true
 
     - name: Build Changelog
+      if: inputs.previousRelease
       id: changelog
       uses: mikepenz/release-changelog-builder-action@v3
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Update version in helm values
+      if: inputs.updateImageTags
       uses: mikefarah/yq@master
       with:
         cmd: yq -i '.image.tag = "${{ steps.version.outputs.version_tag }}"' helm/values.yaml
