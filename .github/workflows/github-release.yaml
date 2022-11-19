@@ -37,11 +37,17 @@ jobs:
         minor_pattern: "feat:"
         bump_each_commit: true
 
-    - name: Build Changelog
+    # - name: Build Changelog
+    #   id: changelog
+    #   uses: mikepenz/release-changelog-builder-action@v3
+    #   env:
+    #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Generate changelog
       id: changelog
-      uses: mikepenz/release-changelog-builder-action@v3
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      uses: jaywcjlove/changelog-generator@main
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
     
     - name: Push changes
       uses: ad-m/github-push-action@master
