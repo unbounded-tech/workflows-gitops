@@ -97,6 +97,23 @@ jobs:
       environment_repository: CloudNativeEntrepreneur/example-preview-envs
 ```
 
+### Gitops Promote
+
+```yaml
+name: promote
+on:
+  push:
+    tags:
+    - v*.*.*
+
+jobs:
+  promote:
+    uses: CloudNativeEntrepreneur/actions/.github/workflows/gitops-promote.yaml@main
+    secrets: inherit
+    with:
+      environment_repository: CloudNativeEntrepreneur/example-prod-env
+```
+
 ### Node Quality
 
 *.github/workflows/pr.yaml*
@@ -132,4 +149,3 @@ jobs:
     uses: CloudNativeEntrepreneur/actions/.github/workflows/node-semantic-release.yaml@main
     secrets: inherit
 ```
-
