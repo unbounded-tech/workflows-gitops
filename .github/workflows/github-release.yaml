@@ -30,6 +30,19 @@ jobs:
         persist-credentials: false
         fetch-depth: 0
 
+    - name: previous tag
+      run: |
+        # set previous_tag to the last tag in the repo
+        previous_tag=$(git describe --abbrev=0 --tags)
+
+        # if previous_tag contains "fatal" then there are no tags in the repo
+        # so set previous_tag to nothing, otherwise export it to GITHUB_ENV
+        if [[ $previous_tag == *"fatal"* ]]; then
+          echo "previous_tag=" >> $GITHUB_ENV
+        else
+          echo "previous_tag=$previous_tag" >> $GITHUB_ENV
+        fi
+
     - name: Version
       id: version
       uses: paulhatch/semantic-version@v4.0.3
@@ -39,7 +52,9 @@ jobs:
         bump_each_commit: true
 
     - name: Generate changelog
+
       id: changelog
+      if: env.previous_tag
       uses: jaywcjlove/changelog-generator@main
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
