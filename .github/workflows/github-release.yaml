@@ -100,6 +100,4 @@ jobs:
         tag_name: ${{ steps.version.outputs.version_tag }}
         generate_release_notes: true
         body: |
-          View Changelog: [${{ env.previous_version }}...${{ steps.version.outputs.version_tag }}](https://github.com/${GITHUB_REPOSITORY}/actions/compare/${{ env.previous_version }}...${{ steps.version.outputs.version_tag }})
-
           ${{ steps.changelog.outputs.changelog }}
