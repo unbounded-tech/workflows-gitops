@@ -44,7 +44,7 @@ jobs:
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"   
           git add -A
-          git commit -m "feat: Promoting ${{ github.event.repository.name }} to ${{ github.ref_name }}"
+          git commit -m "feat(${{ github.event.repository.name }}): Promoting ${{ github.event.repository.name }} to ${{ github.ref_name }}"
         fi
 
     - name: Push prod
