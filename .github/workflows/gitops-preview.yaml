@@ -12,6 +12,9 @@ on:
       integrationTestsContainer:
         required: false 
         type: boolean
+      comment:
+        required: true
+        type: string
     secrets:
       GH_ORG_TOKEN:
         required: true
