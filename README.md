@@ -2,6 +2,12 @@
 
 Shared Github Actions Workflows
 
+Most jobs expect a Personal Access Token to be set as an organizational secret named `GH_ORG_TOKEN` which has permissions for:
+* repo
+* write:packages
+
+You can generate this token here: https://github.com/settings/tokens/new?scopes=repo,read:packages
+
 ## Example
 
 ### Github Release
@@ -17,8 +23,7 @@ jobs:
 
   release:
     uses: CloudNativeEntrepreneur/actions/.github/workflows/github-release.yaml@main
-    secrets:
-      GH_ORG_TOKEN: ${{ secrets.GH_ORG_TOKEN }}
+    secrets: inherit
 ```
 
 ### Node Quality

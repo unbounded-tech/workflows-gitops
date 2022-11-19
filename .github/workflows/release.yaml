@@ -8,5 +8,4 @@ jobs:
 
   release:
     uses: CloudNativeEntrepreneur/actions/.github/workflows/github-release.yaml@main
-    secrets:
-      GH_ORG_TOKEN: ${{ secrets.GH_ORG_TOKEN }}
+    secrets: inherit
