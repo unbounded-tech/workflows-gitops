@@ -25,28 +25,9 @@ jobs:
   release:
     uses: CloudNativeEntrepreneur/actions/.github/workflows/github-release.yaml@main
     secrets: inherit
-```
-
-### Github Release with Helm
-
-Updates /helm chart with version numbers before releasing
-
-*.github/workflows/release.yaml*
-```yaml
-name: release
-on:
-  push:
-    branches:
-    - main
-
-jobs:
-
-  release:
-    uses: CloudNativeEntrepreneur/actions/.github/workflows/github-with-helm-release.yaml@main
-    secrets: inherit
     with:
-      previousRelease: <TODO: git magic to get last tag or nothing>
-      updateImageTags: false
+      docker: true # optional, set to build/release a Dockerfile
+      helm: true # optional, set to release helm chart
 ```
 
 ### Node Quality
