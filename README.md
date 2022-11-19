@@ -4,6 +4,8 @@ Shared Github Actions Workflows
 
 ## Example
 
+### Github Release
+
 ```yaml
 name: release
 on:
