@@ -1,4 +1,4 @@
-name: gitops-promote
+name: gitops-promote-version-bump
 
 on:
   workflow_call:
@@ -15,8 +15,8 @@ on:
 
 jobs:
 
-  gitops-promote:
-    name: GitOps Promote
+  gitops-promote-version-bump:
+    name: GitOps Promote Version Bump
     runs-on: ubuntu-latest
 
     permissions:
