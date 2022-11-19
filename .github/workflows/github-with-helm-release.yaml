@@ -68,13 +68,14 @@ jobs:
         cmd: yq -i '.version = "${{ steps.version.outputs.version_tag }}"' helm/Chart.yaml
 
     - name: Commit changes
+      if: inputs.updateChartVersion || inputs.updateImageTags
       run: |
         git config --local user.email "github-actions[bot]@users.noreply.github.com"
         git config --local user.name "github-actions[bot]"
         git commit -am "chore: set version to ${{ steps.version.outputs.version_tag }}"
         git tag -a ${{ steps.version.outputs.version_tag }} -m "${{ steps.version.outputs.version_tag }}"
     
-    - name: Push changes
+    - name: Push to tag
       uses: ad-m/github-push-action@master
       with:
         github_token: ${{ secrets.GH_ORG_TOKEN }}
