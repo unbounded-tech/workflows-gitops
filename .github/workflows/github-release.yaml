@@ -7,8 +7,8 @@ on:
     
 jobs:
 
-  github-release:
-    name: Github Release
+  verion:
+    name: Version
     runs-on: ubuntu-latest
 
     permissions:
@@ -37,17 +37,33 @@ jobs:
         minor_pattern: "feat:"
         bump_each_commit: true
 
-    # - name: Build Changelog
-    #   id: changelog
-    #   uses: mikepenz/release-changelog-builder-action@v3
-    #   env:
-    #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  changelog:
+
+    name: Generate Changelog
+    runs-on: ubuntu-latest
+
+    permissions:
+      packages: write
+      contents: write
+
+    steps:
 
     - name: Generate changelog
       id: changelog
       uses: jaywcjlove/changelog-generator@main
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
+
+  release:
+    name: Github Release
+    runs-on: ubuntu-latest
+    if: always()
+
+    permissions:
+      packages: write
+      contents: write
+
+    steps:
     
     - name: Push changes
       uses: ad-m/github-push-action@master
@@ -61,4 +77,7 @@ jobs:
       with:
         tag_name: ${{ steps.version.outputs.version_tag }}
         generate_release_notes: true
-        body: ${{steps.changelog.outputs.changelog}}
+        body: |
+          ${{ steps.changelog.outputs.compareurl }}
+
+          ${{ steps.changelog.outputs.changelog }}
