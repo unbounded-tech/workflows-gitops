@@ -17,12 +17,6 @@ jobs:
 
     steps:
 
-    - name: downcase REPO
-      run: |
-        echo "REPO=${GITHUB_REPOSITORY,,}" >>${GITHUB_ENV}
-    # - name: use REPO
-    #   run: echo "The value of REPO is: ${{ env.REPO }}"
-
     - name: Checkout
       uses: actions/checkout@v3
       with:
@@ -36,17 +30,6 @@ jobs:
         major_pattern: "BREAKING CHANGE"
         minor_pattern: "feat:"
         bump_each_commit: true
-
-  changelog:
-
-    name: Generate Changelog
-    runs-on: ubuntu-latest
-
-    permissions:
-      packages: write
-      contents: write
-
-    steps:
 
     - name: Generate changelog
       id: changelog
@@ -64,8 +47,14 @@ jobs:
       contents: write
 
     steps:
+
+    - name: Checkout
+      uses: actions/checkout@v3
+      with:
+        persist-credentials: false
+        fetch-depth: 0
     
-    - name: Push changes
+    - name: Push to tag
       uses: ad-m/github-push-action@master
       with:
         github_token: ${{ secrets.GH_ORG_TOKEN }}
