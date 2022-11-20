@@ -38,7 +38,7 @@ jobs:
       uses: paulhatch/semantic-version@v4.0.3
       with:
         major_pattern: "BREAKING CHANGE"
-        minor_pattern: "feat:"
+        minor_pattern: "feat"
         bump_each_commit: true
 
     - name: Generate changelog
