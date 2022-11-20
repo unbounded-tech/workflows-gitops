@@ -35,6 +35,12 @@ jobs:
     - name: Checkout app
       uses: actions/checkout@v3
 
+    - name: Dump github context
+      run:   echo "$GITHUB_CONTEXT"
+      shell: bash
+      env:
+        GITHUB_CONTEXT: ${{ toJson(github) }}
+
     - name: Setup Helm
       uses: azure/setup-helm@v3
     
@@ -52,7 +58,7 @@ jobs:
           --set name=${{ inputs.name || github.event.repository.name }} \
           --set version=${{ github.head_ref }} \
           --set project=${{ inputs.project }} \
-          --set repository=${{ env.GITHUB_REPOSITORY }} \
+          --set repository=${GITHUB_REPOSITORY} \
           > promotion-environment/helm/templates/${{ github.event.repository.name }}.yaml
 
     - name: Commit Env Changes
