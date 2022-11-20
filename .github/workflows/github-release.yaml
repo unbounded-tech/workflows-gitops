@@ -56,12 +56,12 @@ jobs:
     
     - if: env.previous_tag
       run: |
-        npx conventional-changelog-cli -t ${{ steps.version.outputs.version_tag }} -p angular
+        npx conventional-changelog-cli -t v -p angular
 
     - id: changelog
       if: env.previous_tag
       run: |
-        changelog=$(npx conventional-changelog-cli -t ${{ steps.version.outputs.version_tag }} -p angular)
+        changelog=$(npx conventional-changelog-cli -t v -p angular)
         echo ""::set-output changelog=$changelog"
 
     - run: |
