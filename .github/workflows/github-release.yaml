@@ -30,6 +30,10 @@ jobs:
         persist-credentials: false
         fetch-depth: 0
 
+    - name: fetch tags
+      run: |
+        git fetch --tags
+
     - name: previous tag
       run: |
         previous_tag=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
@@ -43,26 +47,18 @@ jobs:
         minor_pattern: "feat"
         bump_each_commit: true
 
-    - name: Generate changelog
+    # - name: Generate changelog
+    #   id: changelog
+    #   if: env.previous_tag
+    #   uses: jaywcjlove/changelog-generator@main
+    #   with:
+    #     token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Generate Conventional Changelog
       id: changelog
       if: env.previous_tag
-      uses: jaywcjlove/changelog-generator@main
-      with:
-        token: ${{ secrets.GITHUB_TOKEN }}
-
-    - if: env.previous_tag
       run: |
-        git fetch --all --tags --prune
-    
-    - if: env.previous_tag
-      run: |
-        npx conventional-changelog-cli -p angular
-
-    - id: changelog
-      if: env.previous_tag
-      run: |
-        changelog=$(npx conventional-changelog-cli -p angular)
-        echo ""::set-output changelog=$changelog"
+        echo ""::set-output changelog=$(npx conventional-changelog-cli -p angular)"
 
     - run: |
         echo "${{ steps.changelog.outputs.changelog }}"
