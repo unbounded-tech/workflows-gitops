@@ -3,6 +3,9 @@ name: gitops-preview
 on:
   workflow_call:
     inputs:
+      name:
+        type: string
+        required: false
       environment_repository:
         required: true
         type: string
@@ -103,10 +106,11 @@ jobs:
       run: |
         mkdir -p previews/helm/templates
         helm template preview/helm/ \
+          --set name=${{ inputs.name || github.event.repository.name }} \
           --set pr=pr-${{ github.event.pull_request.number }} \
           --set tag=pr-${{ github.event.pull_request.number }}-${{ github.sha }} \
           --set headRef=${{ github.head_ref }} \
-          --set repository.name=${{ github.event.repository.name }} \
+          --set repository=${GITHUB_REPOSITORY} \
           > previews/helm/templates/${{ github.event.repository.name }}-pr-${{ github.event.pull_request.number }}.yaml
 
     - name: Commit Preview Env Changes
