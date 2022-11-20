@@ -48,8 +48,8 @@ jobs:
         helm template promote/helm/ \
           --set name=${{ github.event.repository.name }} \
           --set version=${{ github.head_ref }} \
-          --set destination.namespace=${{ inputs.destinationNamespace }}
-          --set repository=${{ env.GITHUB_REPOSITORY }}
+          --set destination.namespace=${{ inputs.destinationNamespace }} \
+          --set repository=${{ env.GITHUB_REPOSITORY }} \
           > promotion-environment/helm/templates/${{ github.event.repository.name }}.yaml
 
     - name: Commit Env Changes
