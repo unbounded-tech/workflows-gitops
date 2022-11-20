@@ -6,6 +6,9 @@ on:
       name:
         type: string
         required: false
+      project:
+        type: string
+        required: true
       environment_repository:
         required: true
         type: string
@@ -110,6 +113,7 @@ jobs:
           --set pr=pr-${{ github.event.pull_request.number }} \
           --set tag=pr-${{ github.event.pull_request.number }}-${{ github.sha }} \
           --set headRef=${{ github.head_ref }} \
+          --set project=${{ inputs.project }} \
           --set repository=${GITHUB_REPOSITORY} \
           > previews/helm/templates/${{ github.event.repository.name }}-pr-${{ github.event.pull_request.number }}.yaml
 
