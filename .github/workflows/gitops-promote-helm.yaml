@@ -3,6 +3,9 @@ name: gitops-promote-helm
 on:
   workflow_call:
     inputs:
+      name:
+        type: string
+        required: false
       project:
         type: string
         required: true
@@ -46,7 +49,7 @@ jobs:
       run: |
         mkdir -p promotion-environment/helm/templates
         helm template promote/helm/ \
-          --set name=${{ github.event.repository.name }} \
+          --set name=${{ inputs.name || github.event.repository.name }} \
           --set version=${{ github.head_ref }} \
           --set project=${{ inputs.project }} \
           --set repository=${{ env.GITHUB_REPOSITORY }} \
