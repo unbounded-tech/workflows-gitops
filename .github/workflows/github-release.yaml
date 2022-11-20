@@ -58,14 +58,14 @@ jobs:
       run: |
         npx conventional-changelog-cli -t ${{ steps.version.outputs.version_tag }} -p angular
 
-    - if: env.previous_tag
+    - id: changelog
+      if: env.previous_tag
       run: |
         changelog=$(npx conventional-changelog-cli -t ${{ steps.version.outputs.version_tag }} -p angular)
-        echo "changelog=$changelog" >> $GITHUB_ENV
+        echo ""::set-output changelog=$changelog"
 
-    - if: env.changelog
-      run: |
-        echo "${{ env.changelog }}"
+    - run: |
+        echo "${{ steps.changelog.outputs.changelog }}"
       
     - name: Update image.tag in helm values (Optional)
       if: inputs.container
