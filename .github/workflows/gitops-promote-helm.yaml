@@ -56,7 +56,7 @@ jobs:
         mkdir -p promotion-environment/helm/templates
         helm template promote/helm/ \
           --set name=${{ inputs.name || github.event.repository.name }} \
-          --set version=${{ github.head_ref }} \
+          --set version=${{ github.ref_name }} \
           --set project=${{ inputs.project }} \
           --set repository=${GITHUB_REPOSITORY} \
           > promotion-environment/helm/templates/${{ github.event.repository.name }}.yaml
