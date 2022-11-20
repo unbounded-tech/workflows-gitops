@@ -58,7 +58,7 @@ jobs:
       id: changelog
       if: env.previous_tag
       run: |
-        echo ""::set-output changelog=$(npx conventional-changelog-cli -p angular)"
+        echo ""::set-output name=changelog::$(npx conventional-changelog-cli -p angular)"
 
     - run: |
         echo "${{ steps.changelog.outputs.changelog }}"
