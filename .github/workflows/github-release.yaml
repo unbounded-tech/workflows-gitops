@@ -54,10 +54,17 @@ jobs:
     #   with:
     #     token: ${{ secrets.GITHUB_TOKEN }}
 
+    # - name: Generate Conventional Changelog
+    #   id: changelog
+    #   if: env.previous_tag
+    #   run: echo "changelog=$(npx conventional-changelog-cli -p angular; echo x$?)" >> $GITHUB_OUTPUT
     - name: Generate Conventional Changelog
       id: changelog
       if: env.previous_tag
-      run: echo "changelog=$(npx conventional-changelog-cli -p angular; echo x$?)" >> $GITHUB_OUTPUT
+      run: >-
+        echo "::set-output name=changelog::$(
+          npx conventional-changelog-cli -p angular
+        )"
 
     - run: |
         echo "${{ steps.changelog.outputs.changelog }}"
