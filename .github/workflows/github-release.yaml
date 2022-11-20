@@ -50,12 +50,16 @@ jobs:
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
 
-    - run: |
+    - if: env.previous_tag
+      run: |
         git fetch --all --tags --prune
-        echo "changelog=$(npx conventional-changelog-cli -t ${{ env.previous_tag}}~1 -p angular)" >> $GITHUB_ENV
-    - run: |
-        echo "${{ env.changelog }}"
+        changelog=$(npx conventional-changelog-cli -t ${{ env.previous_tag}}~1 -p angular)
+        echo "changelog=$changelog" >> $GITHUB_ENV
 
+    - if: env.changelog
+      run: |
+        echo "${{ env.changelog }}"
+      
     - name: Update image.tag in helm values (Optional)
       if: inputs.container
       uses: mikefarah/yq@master
