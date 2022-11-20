@@ -134,7 +134,7 @@ jobs:
     secrets: inherit
     with:
       environment_repository: CloudNativeEntrepreneur/example-prod-env
-      destination_namespace: example-prod-env
+      project: example-prod-env
       pull_request: false # Optional - set to true to create pull request instead of pushing to the default branch
 ```
 

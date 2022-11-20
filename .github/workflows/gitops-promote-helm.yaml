@@ -3,7 +3,7 @@ name: gitops-promote-helm
 on:
   workflow_call:
     inputs:
-      destination_namespace:
+      project:
         type: string
         required: true
       environment_repository:
@@ -48,7 +48,7 @@ jobs:
         helm template promote/helm/ \
           --set name=${{ github.event.repository.name }} \
           --set version=${{ github.head_ref }} \
-          --set destination.namespace=${{ inputs.destinationNamespace }} \
+          --set project=${{ inputs.project }} \
           --set repository=${{ env.GITHUB_REPOSITORY }} \
           > promotion-environment/helm/templates/${{ github.event.repository.name }}.yaml
 
