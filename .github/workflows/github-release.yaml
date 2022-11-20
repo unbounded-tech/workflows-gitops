@@ -47,27 +47,12 @@ jobs:
         minor_pattern: "feat"
         bump_each_commit: true
 
-    # - name: Generate changelog
-    #   id: changelog
-    #   if: env.previous_tag
-    #   uses: jaywcjlove/changelog-generator@main
-    #   with:
-    #     token: ${{ secrets.GITHUB_TOKEN }}
-
-    # - name: Generate Conventional Changelog
-    #   id: changelog
-    #   if: env.previous_tag
-    #   run: echo "changelog=$(npx conventional-changelog-cli -p angular; echo x$?)" >> $GITHUB_OUTPUT
-    - name: Generate Conventional Changelog
+    - name: Generate changelog
       id: changelog
       if: env.previous_tag
-      run: >-
-        echo "::set-output name=changelog::$(
-          npx conventional-changelog-cli -p angular
-        )"
-
-    - run: |
-        echo "${{ steps.changelog.outputs.changelog }}"
+      uses: jaywcjlove/changelog-generator@main
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
       
     - name: Update image.tag in helm values (Optional)
       if: inputs.container
