@@ -53,6 +53,9 @@ jobs:
     - if: env.previous_tag
       run: |
         git fetch --all --tags --prune
+
+    - if: env.previous_tag
+      run: |
         changelog=$(npx conventional-changelog-cli -t ${{ env.previous_tag}}~1 -p angular)
         echo "changelog=$changelog" >> $GITHUB_ENV
 
