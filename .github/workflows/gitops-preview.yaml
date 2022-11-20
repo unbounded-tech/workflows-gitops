@@ -19,8 +19,10 @@ on:
         required: false 
         type: boolean
       comment:
-        required: true
+        required: false
         type: string
+        default: |
+          Your preview environment has been published! :rocket:
     secrets:
       GH_ORG_TOKEN:
         required: true
