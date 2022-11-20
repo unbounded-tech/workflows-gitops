@@ -1,0 +1,87 @@
+name: gitops-promote-helm
+
+on:
+  workflow_call:
+    inputs:
+      destination_namespace:
+        type: string
+        required: true
+      environment_repository:
+        type: string
+        required: true
+      pull_request:
+        type: boolean
+        required: false
+    secrets:
+      GH_ORG_TOKEN:
+        required: true
+
+jobs:
+
+  gitops-promote-helm:
+    name: GitOps Promote - Helm
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+
+    steps:
+
+    - name: Checkout app
+      uses: actions/checkout@v3
+
+    - name: Setup Helm
+      uses: azure/setup-helm@v3
+    
+    - name: Checkout Environment Project
+      uses: actions/checkout@v3
+      with: 
+        path: promotion-environment
+        repository: ${{ inputs.environment_repository }}
+        persist-credentials: false
+
+    - name: Create Application in Environment from Promote Helm Chart
+      run: |
+        mkdir -p promotion-environment/helm/templates
+        helm template promote/helm/ \
+          --set name=${{ github.event.repository.name }} \
+          --set version=${{ github.head_ref }} \
+          --set destination.namespace=${{ inputs.destinationNamespace }}
+          > promotion-environment/helm/templates/${{ github.event.repository.name }}.yaml
+
+    - name: Commit Env Changes
+      run: |
+        cd promotion-environment
+
+        if output=$(git status --porcelain) && [ -z "$output" ]; then
+          # Working directory clean
+
+          echo "No changes to commit"
+        else 
+          # Uncommitted changes
+
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"   
+          git add -A
+          git commit -m "feat(${{ github.event.repository.name }}): ${{ github.event.repository.name }}-pr-${{ github.event.pull_request.number }} ${{ github.sha }}"
+        fi
+
+    - name: Push main
+      if: inputs.pull_request == false
+      uses: ad-m/github-push-action@master
+      with:
+        directory: promotion-environment
+        github_token: ${{ secrets.GH_ORG_TOKEN }}
+        repository: ${{ inputs.environment_repository }}
+    
+    - name: Create Pull Request
+      if: inputs.pull_request
+      uses: peter-evans/create-pull-request@v4
+      with:
+        path: promotion-environment
+        branch: promote/${{ github.event.repository.name }}-${{ github.ref_name }}
+        token: ${{ secrets.GH_ORG_TOKEN }}
+        title: ${{ github.event.repository.name }} to ${{ github.ref_name }}
+        body: Promotes ${{ github.event.repository.name }} to ${{ github.ref_name }}

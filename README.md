@@ -117,6 +117,27 @@ jobs:
       pull_request: false # Optional - set to true to create pull request instead of pushing to the default branch
 ```
 
+### Gitops Promote - Helm
+
+Create a helm chart at `/promote/helm` in your application that creates the ArgoCD Application.
+
+```yaml
+name: promote
+on:
+  push:
+    tags:
+    - v*.*.*
+
+jobs:
+  promote:
+    uses: CloudNativeEntrepreneur/actions/.github/workflows/gitops-promote-version-bump.yaml@main
+    secrets: inherit
+    with:
+      environment_repository: CloudNativeEntrepreneur/example-prod-env
+      destination_namespace: example-prod-env
+      pull_request: false # Optional - set to true to create pull request instead of pushing to the default branch
+```
+
 ### Node Quality
 
 *.github/workflows/pr.yaml*
