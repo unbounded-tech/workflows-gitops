@@ -18,7 +18,8 @@ on:
       values:
         type: string
         required: false
-        default: "{}"
+        default: |
+          # No custom values set
     secrets:
       GH_ORG_TOKEN:
         required: true
