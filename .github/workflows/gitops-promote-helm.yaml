@@ -63,7 +63,7 @@ jobs:
           --set version=${{ github.ref_name }} \
           --set project=${{ inputs.project }} \
           --set repository=${GITHUB_REPOSITORY} \
-          --set values=${{ inputs.values }} \
+          --set values="${{ inputs.values }}" \
           > promotion-environment/helm/templates/${{ github.event.repository.name }}.yaml
 
     - name: Commit Env Changes
