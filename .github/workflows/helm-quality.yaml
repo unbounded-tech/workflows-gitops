@@ -1,4 +1,4 @@
-name: node-quality
+name: helm-quality
 
 on:
   workflow_call:
@@ -9,7 +9,7 @@ on:
 
 jobs:
 
-  node-quality:
+  helm-quality:
     runs-on: ubuntu-latest
     
     steps:    
