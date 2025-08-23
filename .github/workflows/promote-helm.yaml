@@ -37,7 +37,7 @@ jobs:
     steps:
 
     - name: Checkout app
-      uses: actions/checkout@v3
+      uses: actions/checkout@v5
 
     - name: Dump github context
       run:   echo "$GITHUB_CONTEXT"
@@ -49,7 +49,7 @@ jobs:
       uses: azure/setup-helm@v3
     
     - name: Checkout Environment Project
-      uses: actions/checkout@v3
+      uses: actions/checkout@v5
       with: 
         path: promotion-environment
         repository: ${{ inputs.environment_repository }}
