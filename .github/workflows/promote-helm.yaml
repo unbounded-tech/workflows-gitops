@@ -46,7 +46,7 @@ jobs:
         GITHUB_CONTEXT: ${{ toJson(github) }}
 
     - name: Setup Helm
-      uses: azure/setup-helm@v3
+      uses: azure/setup-helm@v4
     
     - name: Checkout Environment Project
       uses: actions/checkout@v3
