@@ -73,7 +73,7 @@ jobs:
 
     - name: Build and push Docker image
       if: inputs.container
-      uses: docker/build-push-action@v3
+      uses: docker/build-push-action@v6
       with:
         context: .
         push: true
@@ -86,7 +86,7 @@ jobs:
 
     - name: Build and push integration tests docker image
       if: inputs.integrationTestsContainer
-      uses: docker/build-push-action@v3
+      uses: docker/build-push-action@v6
       with:
         context: .
         file: ./jest.integration.Dockerfile
