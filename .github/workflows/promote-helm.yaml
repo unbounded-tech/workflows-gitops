@@ -29,7 +29,7 @@ on:
         type: string
         required: true
 
-      pull_request:
+      create_pull_request:
         type: boolean
         required: false
 
@@ -37,6 +37,17 @@ on:
         type: string
         required: false
         default: ""
+
+      preview:
+        type: boolean
+        required: false
+        default: false
+
+      comment:
+        required: false
+        type: string
+        default: |
+          Your preview environment has been published! :rocket:
 
     secrets:
       GH_PAT:
@@ -59,42 +70,66 @@ jobs:
     steps:
 
     - name: Checkout repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
 
     - name: Setup Helm
       uses: azure/setup-helm@v4
     
     - name: Checkout Environment Project
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
       with: 
         path: environment
         repository: ${{ inputs.environment_repository }}
         persist-credentials: false
         token: ${{ secrets.GH_PAT }}
 
-    - name: Save existing values
-      id: save_values
+    - name: set NAME env
       run: |
-        NAME="${{ inputs.project }}-${{ inputs.name || github.event.repository.name }}"
-        DEST_APP_YAML="environment/${{ inputs.destination_path }}/${{ github.event.repository.name }}.yaml"
+        NAME="${{ inputs.name || github.event.repository.name }}"
+        echo "NAME=$NAME" >> $GITHUB_ENV
 
+    - name: Set Argo Name env
+      env:
+        NAME: ${{ env.NAME }}
+      run: |
+        ARGO_NAME=${{ inputs.project }}-${{ env.NAME }}
+        echo "ARGO_NAME=$ARGO_NAME" >> $GITHUB_ENV
+
+    - name: Set DESTINATION_YAML Environment Variables
+      if: ${{ inputs.preview == false }}
+      run: |
+        DESTINATION_YAML="environment/${{ inputs.destination_path }}/${{ inputs.name || github.event.repository.name }}.yaml"
+        echo "DESTINATION_YAML=$DESTINATION_YAML" >> $GITHUB_ENV
+
+    - name: Set Preview DESTINATION_YAML Envionment Variables
+      if: inputs.preview
+      run: |
+        DESTINATION_YAML="environment/${{ inputs.destination_path }}/${{ inputs.name || github.event.repository.name }}-pr-${{ github.event.pull_request.number }}.yaml"
+        echo "DESTINATION_YAML=$DESTINATION_YAML" >> $GITHUB_ENV
+
+    - name: Save existing argo values
+      id: save_values
+      env:
+        ARGO_NAME: $${{ env.ARGO_NAME }}
+        DESTINATION_YAML: ${{ env.DESTINATION_YAML }}
+      run: |
         echo "{}" > existing_values.yaml
 
-        echo "Checking for existing values from Application $NAME in destination file $DEST_APP_YAML"
-        if [ -f "$DEST_APP_YAML" ]; then
+        echo "Checking for existing values from Application ${{ env.ARGO_NAME }} in destination file ${{ env.DESTINATION_YAML }}"
+        if [ -f "${{ env.DESTINATION_YAML }}" ]; then
           echo "Destination file exists:"
-          cat "$DEST_APP_YAML" 
+          cat "${{ env.DESTINATION_YAML }}" 
           
           echo "Finding Application..."
 
-          EXISTING_APPLICATION=$(yq eval 'select(.kind == "Application" and .metadata.name == "'$NAME'")' "$DEST_APP_YAML")
+          EXISTING_APPLICATION=$(yq eval 'select(.kind == "Application" and .metadata.name == "'${{ env.ARGO_NAME }}'")' "${{ env.DESTINATION_YAML }}")
           
           # Check if application was found
           if [ -z "$EXISTING_APPLICATION" ] || [ "$EXISTING_APPLICATION" = "null" ]; then
-            echo "No Application found with name: $NAME"
+            echo "No Application found with name: ${{ env.ARGO_NAME }}"
             
           else
-            echo "Found Application: $NAME"
+            echo "Found Application: ${{ env.ARGO_NAME }}"
             
             # Extract existing values from the destination file
             EXISTING_VALUES=$(echo "$EXISTING_APPLICATION" | yq eval '.spec.source.helm.values' -)
@@ -117,38 +152,59 @@ jobs:
         cat existing_values.yaml
 
     - name: Create Application in Environment from Promote Helm Chart
+      if: ${{ inputs.preview == false }}
+      env:
+        NAME: ${{ env.NAME }}
+        DESTINATION_YAML: ${{ env.DESTINATION_YAML }}
       run: |
-        DEST_APP_YAML="environment/${{ inputs.destination_path }}/${{ github.event.repository.name }}.yaml"
-
         mkdir -p environment/${{ inputs.destination_path }}
         helm template ${{ inputs.promotion_chart_path }} \
-          --set name=${{ inputs.name || github.event.repository.name }} \
-          --set version=${{ github.ref_name }} \
+          --set application.name=${{ env.NAME }} \
+          --set application.targetRevision=${{ github.ref_name }} \
+          --set application.repository=https://github.com/${{ github.repository }}.git \
+          --set application.destination.namespace=${{ inputs.project }} \
           --set project=${{ inputs.project }} \
-          --set repository=${{ github.repository }} \
           --set-literal values="${{ inputs.values }}" \
-          > "$DEST_APP_YAML"
-
-    - name: Store new values
-      id: store_new_values
+          > "${{ env.DESTINATION_YAML }}"
+    
+    - name: Create Preview Application in Environment from Promote Helm Chart
+      if: inputs.preview
+      env:
+        NAME: ${{ env.NAME }}
+        DESTINATION_YAML: ${{ env.DESTINATION_YAML }}
       run: |
-        NAME="${{ inputs.project }}-${{ inputs.name || github.event.repository.name }}"
-        DEST_APP_YAML="environment/${{ inputs.destination_path }}/${{ github.event.repository.name }}.yaml"
+        mkdir -p environment/${{ inputs.destination_path }}
+        helm template ${{ inputs.promotion_chart_path }} \
+          --set application.name=${{ env.NAME }}-pr-${{ github.event.pull_request.number }} \
+          --set application.targetRevision=${{ github.ref_name }} \
+          --set application.repository=https://github.com/${{ github.repository }}.git \
+          --set application.destination.namespace=${{ env.NAME }}-pr-${{ github.event.pull_request.number }} \
+          --set application.image.tag=pr-${{ github.event.pull_request.number }}-${{ github.event.pull_request.head.sha }} \
+          --set project=${{ inputs.project }} \
+          --set-literal values="${{ inputs.values }}" \
+          > "${{ env.DESTINATION_YAML }}"
+
+    - name: Store new Argo CD values
+      id: store_new_values
+      env:
+        ARGO_NAME: ${{ env.ARGO_NAME }}
+        DESTINATION_YAML: ${{ env.DESTINATION_YAML }}
+      run: |
         NEW_VALUES=""
 
-        cat "$DEST_APP_YAML"
+        cat "${{ env.DESTINATION_YAML }}"
 
-        echo "Finding Application $NAME in rendered template..."
-        APPLICATION=$(yq eval 'select(.kind == "Application" and .metadata.name == "'$NAME'")' "$DEST_APP_YAML")
+        echo "Finding Application ${{ env.ARGO_NAME }} in rendered template..."
+        APPLICATION=$(yq eval 'select(.kind == "Application" and .metadata.name == "'${{ env.ARGO_NAME }}'")' "${{ env.DESTINATION_YAML }}")
 
         if [ -z "$APPLICATION" ] || [ "$APPLICATION" = "null" ]; then
-          echo "No Application found with name: $NAME"
+          echo "No Application found with name: ${{ env.ARGO_NAME }}"
         else
-          echo "Found Application: $NAME"
+          echo "Found Application: ${{ env.ARGO_NAME }}"
 
           NEW_VALUES=$(echo "$APPLICATION" | yq eval '.spec.source.helm.values' -)
           if [ -z "$NEW_VALUES" ] || [ "$NEW_VALUES" = "null" ]; then
-            echo "No helm values found in Application $NAME"
+            echo "No helm values found in Application ${{ env.ARGO_NAME }}"
             echo "{}" > new_values.yaml
           else
             echo "$NEW_VALUES" > new_values.yaml
@@ -158,7 +214,7 @@ jobs:
         echo "New values:"
         cat new_values.yaml
 
-    - name: Merge Values
+    - name: Merge Argo CD Values
       id: merge_values
       run: |
         # Merge the values, with new values taking precedence
@@ -182,29 +238,32 @@ jobs:
 
     - name: Replace values with merged values
       if: steps.merge_values.outputs.has_values == 'true'
+      env:
+        DESTINATION_YAML: ${{ env.DESTINATION_YAML }}
+        ARGO_NAME: ${{ env.ARGO_NAME }}
       run: |
-        NAME="${{ inputs.project }}-${{ inputs.name || github.event.repository.name }}"
-        DEST_APP_YAML="environment/${{ inputs.destination_path }}/${{ github.event.repository.name }}.yaml"
         
         echo "Replacing values in the generated YAML file with merged values"
-        echo "Checking for destination file: $DEST_APP_YAML"
-        if [ -f "$DEST_APP_YAML" ]; then
+        echo "Checking for destination file: ${{ env.DESTINATION_YAML }}"
+        if [ -f "${{ env.DESTINATION_YAML }}" ]; then
           echo "Destination file exists, finding existing application..."
 
-          EXISTING_APPLICATION=$(yq eval 'select(.kind == "Application" and .metadata.name == "'$NAME'")' "$DEST_APP_YAML")
+          EXISTING_APPLICATION=$(yq eval 'select(.kind == "Application" and .metadata.name == "'${{ env.ARGO_NAME }}'")' "${{ env.DESTINATION_YAML }}")
           
           # Update the Application's helm values with merged values
-          yq eval '(select(.kind == "Application" and .metadata.name == "'$NAME'").spec.source.helm.values) = strload("merged_values.yaml")' -i "$DEST_APP_YAML"
+          yq eval '(select(.kind == "Application" and .metadata.name == "'${{ env.ARGO_NAME }}'").spec.source.helm.values) = strload("merged_values.yaml")' -i "${{ env.DESTINATION_YAML }}"
           
-          echo "Successfully replaced values in $DEST_APP_YAML with merged values"
+          echo "Successfully replaced values in ${{ env.DESTINATION_YAML }} with merged values"
           
         else
           echo "Destination file does not exist, using only new values."
         fi
 
-        cat "$DEST_APP_YAML"
+        cat "$DESTINATION_YAML"
 
     - name: Commit Env Changes
+      env:
+        NAME: ${{ env.NAME }}
       run: |
         cd environment
 
@@ -218,11 +277,11 @@ jobs:
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"   
           git add -A
-          git commit -m "feat(${{ github.event.repository.name }}): promote to ${{ github.ref_name }}"
+          git commit -m "feat(${{ env.NAME }}): promote to ${{ github.ref_name }}"
         fi
 
     - name: Push main
-      if: inputs.pull_request == false
+      if: inputs.create_pull_request == false
       uses: ad-m/github-push-action@master
       with:
         directory: environment
@@ -230,11 +289,32 @@ jobs:
         repository: ${{ inputs.environment_repository }}
     
     - name: Create Pull Request
-      if: inputs.pull_request
+      if: inputs.create_pull_request
       uses: peter-evans/create-pull-request@v7
+      env:
+        NAME: ${{ env.NAME }}
       with:
         path: environment
-        branch: promote/${{ github.event.repository.name }}-${{ github.ref_name }}
+        branch: promote/${{ env.NAME }}-${{ github.ref_name }}
         token: ${{ secrets.GH_PAT }}
-        title: ${{ github.event.repository.name }} to ${{ github.ref_name }}
-        body: Promotes ${{ github.event.repository.name }} to ${{ github.ref_name }}
+        title: ${{ env.NAME }} to ${{ github.ref_name }}
+        body: Promotes ${{ env.NAME }} to ${{ github.ref_name }}
+
+    - name: Find Comment
+      if: inputs.preview
+      uses: peter-evans/find-comment@v2
+      id: fc
+      with:
+        issue-number: ${{ github.event.pull_request.number }}
+        comment-author: 'github-actions[bot]'
+        body-includes: Your preview environment
+
+    - name: Create or update comment
+      if: inputs.preview
+      uses: peter-evans/create-or-update-comment@v2
+      with:
+        comment-id: ${{ steps.fc.outputs.comment-id }}
+        issue-number: ${{ github.event.pull_request.number }}
+        body: |
+          ${{ inputs.comment }}
+        edit-mode: replace
