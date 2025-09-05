@@ -1,4 +1,4 @@
-name: gitops-promote-helm
+name: argocd-promote-helm
 
 on:
   workflow_call:
@@ -56,7 +56,6 @@ on:
 jobs:
 
   gitops-promote-helm:
-    name: GitOps Promote - Helm
     runs-on: ubuntu-latest
     environment:
       name: ${{ inputs.environment_name }}
@@ -83,9 +82,16 @@ jobs:
         persist-credentials: false
         token: ${{ secrets.GH_PAT }}
 
-    - name: set NAME env
+    - name: set name env
+      if: inputs.preview == false
       run: |
         NAME="${{ inputs.name || github.event.repository.name }}"
+        echo "NAME=$NAME" >> $GITHUB_ENV
+
+    - name: set preview name env
+      if: inputs.preview
+      run: |
+        NAME="${{ inputs.name || github.event.repository.name }}-pr-${{ github.event.pull_request.number }}"
         echo "NAME=$NAME" >> $GITHUB_ENV
 
     - name: Set Argo Name env
@@ -96,15 +102,10 @@ jobs:
         echo "ARGO_NAME=$ARGO_NAME" >> $GITHUB_ENV
 
     - name: Set DESTINATION_YAML Environment Variables
-      if: ${{ inputs.preview == false }}
+      env:
+        NAME: ${{ env.NAME }}
       run: |
-        DESTINATION_YAML="environment/${{ inputs.destination_path }}/${{ inputs.name || github.event.repository.name }}.yaml"
-        echo "DESTINATION_YAML=$DESTINATION_YAML" >> $GITHUB_ENV
-
-    - name: Set Preview DESTINATION_YAML Envionment Variables
-      if: inputs.preview
-      run: |
-        DESTINATION_YAML="environment/${{ inputs.destination_path }}/${{ inputs.name || github.event.repository.name }}-pr-${{ github.event.pull_request.number }}.yaml"
+        DESTINATION_YAML="environment/${{ inputs.destination_path }}/${{ env.NAME }}.yaml"
         echo "DESTINATION_YAML=$DESTINATION_YAML" >> $GITHUB_ENV
 
     - name: Save existing argo values
