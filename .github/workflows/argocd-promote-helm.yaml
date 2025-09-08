@@ -78,14 +78,6 @@ jobs:
 
     - name: Setup Helm
       uses: azure/setup-helm@v4
-    
-    - name: Checkout Environment Project
-      uses: actions/checkout@v5
-      with: 
-        path: environment
-        repository: ${{ inputs.environment_repository }}
-        persist-credentials: false
-        token: ${{ secrets.GH_PAT }}
 
     - name: set name env
       if: inputs.preview == false
@@ -112,6 +104,63 @@ jobs:
       run: |
         DESTINATION_YAML="environment/${{ inputs.destination_path }}/${{ env.NAME }}.yaml"
         echo "DESTINATION_YAML=$DESTINATION_YAML" >> $GITHUB_ENV
+
+    - name: Set PR Title, Body, and Branch
+      if: inputs.create_pull_request && inputs.preview == false
+      env:
+        NAME: ${{ env.NAME }}
+      run: |
+        PR_TITLE="Promote ${{ env.NAME }} to ${{ github.ref_name }}"
+        PR_BODY="Promotes ${{ env.NAME }} to https://github.com/${{ github.repository }}/releases/tag/${{ github.ref_name }}"
+        PR_BRANCH="promote/${{ env.NAME }}-${{ github.ref_name }}"
+        echo "PR_TITLE=$PR_TITLE" >> $GITHUB_ENV
+        echo "PR_BODY=$PR_BODY" >> $GITHUB_ENV
+        echo "PR_BRANCH=$PR_BRANCH" >> $GITHUB_ENV
+
+    - name: Set Preview PR Title, Body, and Branch
+      if: inputs.create_pull_request && inputs.preview
+      env:
+        NAME: ${{ env.NAME }}
+      run: |
+        PR_TITLE="Preview ${{ env.NAME }}"
+        PR_BODY="Preview environment for ${{ github.event.pull_request.html_url }}"
+        PR_BRANCH="preview/${{ env.NAME }}-${{ github.event.pull_request.head.sha }}"
+        echo "PR_TITLE=$PR_TITLE" >> $GITHUB_ENV
+        echo "PR_BODY=$PR_BODY" >> $GITHUB_ENV
+        echo "PR_BRANCH=$PR_BRANCH" >> $GITHUB_ENV
+
+    - name: Set Commit Message
+      if: inputs.preview == false
+      env:
+        NAME: ${{ env.NAME }}
+      run: |
+        COMMIT_MESSAGE="feat(${{ env.NAME }}): promote to https://github.com/${{ github.repository }}/releases/tag/${{ github.ref_name }}"
+        echo "COMMIT_MESSAGE=${COMMIT_MESSAGE}" >> $GITHUB_ENV
+
+    - name: Set Preview Commit Message
+      if: inputs.preview
+      env:
+        NAME: ${{ env.NAME }}
+      run: |
+        COMMIT_MESSAGE="feat(${{ github.event.repository.name }}): preview ${{ github.event.pull_request.html_url }} ${{ github.event.pull_request.head.sha }}"
+        echo "COMMIT_MESSAGE=${COMMIT_MESSAGE}" >> $GITHUB_ENV
+
+    - name: Checkout Environment Project
+      uses: actions/checkout@v5
+      with: 
+        path: environment
+        repository: ${{ inputs.environment_repository }}
+        persist-credentials: false
+        token: ${{ secrets.GH_PAT }}
+
+    - name: Create or Checkout Preview Branch
+      if: inputs.preview
+      env:
+        PR_BRANCH: ${{ env.PR_BRANCH }}
+      run: |
+        cd environment
+        git fetch origin $PR_BRANCH || git checkout -b $PR_BRANCH
+        git checkout $PR_BRANCH
 
     - name: Save existing argo values
       id: save_values
@@ -268,22 +317,6 @@ jobs:
         cat "$DESTINATION_YAML"
 
 
-    - name: Set PR Commit Message
-      if: inputs.preview == false
-      env:
-        NAME: ${{ env.NAME }}
-      run: |
-        COMMIT_MESSAGE="feat(${{ env.NAME }}): promote to https://github.com/${{ github.repository }}/releases/tag/${{ github.ref_name }}"
-        echo "COMMIT_MESSAGE=${COMMIT_MESSAGE}" >> $GITHUB_ENV
-
-    - name: Set Preview PR Commit Message
-      if: inputs.preview
-      env:
-        NAME: ${{ env.NAME }}
-      run: |
-        COMMIT_MESSAGE="feat(${{ github.event.repository.name }}): preview ${{ github.event.pull_request.html_url }} ${{ github.event.pull_request.head.sha }}"
-        echo "COMMIT_MESSAGE=${COMMIT_MESSAGE}" >> $GITHUB_ENV
-
     - name: Commit Env Changes
       env:
         NAME: ${{ env.NAME }}
@@ -311,30 +344,6 @@ jobs:
         directory: environment
         github_token: ${{ secrets.GH_PAT }}
         repository: ${{ inputs.environment_repository }}
-
-    - name: Set PR Title, Body, and Branch
-      if: inputs.create_pull_request && inputs.preview == false
-      env:
-        NAME: ${{ env.NAME }}
-      run: |
-        PR_TITLE="Promote ${{ env.NAME }} to ${{ github.ref_name }}"
-        PR_BODY="Promotes ${{ env.NAME }} to https://github.com/${{ github.repository }}/releases/tag/${{ github.ref_name }}"
-        PR_BRANCH="promote/${{ env.NAME }}-${{ github.ref_name }}"
-        echo "PR_TITLE=$PR_TITLE" >> $GITHUB_ENV
-        echo "PR_BODY=$PR_BODY" >> $GITHUB_ENV
-        echo "PR_BRANCH=$PR_BRANCH" >> $GITHUB_ENV
-
-    - name: Set Preview PR Title, Body, and Branch
-      if: inputs.create_pull_request && inputs.preview
-      env:
-        NAME: ${{ env.NAME }}
-      run: |
-        PR_TITLE="Preview ${{ env.NAME }}"
-        PR_BODY="Preview environment for ${{ github.event.pull_request.html_url }}"
-        PR_BRANCH="preview/${{ env.NAME }}-${{ github.event.pull_request.head.sha }}"
-        echo "PR_TITLE=$PR_TITLE" >> $GITHUB_ENV
-        echo "PR_BODY=$PR_BODY" >> $GITHUB_ENV
-        echo "PR_BRANCH=$PR_BRANCH" >> $GITHUB_ENV
 
     - name: Create Pull Request
       if: inputs.create_pull_request
