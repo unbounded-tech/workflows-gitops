@@ -345,6 +345,7 @@ jobs:
         github_token: ${{ secrets.GH_PAT }}
         repository: ${{ inputs.environment_repository }}
 
+    # handles push with PR creation
     - name: Create Promotion Pull Request
       if: inputs.create_pull_request && inputs.preview == false
       uses: peter-evans/create-pull-request@v7
@@ -364,10 +365,13 @@ jobs:
     - name: Push Preview Environment Changes
       if: inputs.create_pull_request && inputs.preview
       uses: ad-m/github-push-action@master
+      env:
+        PR_BRANCH: ${{ env.PR_BRANCH }}
       with:
         directory: environment
         github_token: ${{ secrets.GH_PAT }}
         repository: ${{ inputs.environment_repository }}
+        branch: ${{ env.PR_BRANCH }}
 
     - name: Create Preview Pull Request
       if: inputs.create_pull_request && inputs.preview
