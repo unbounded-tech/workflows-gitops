@@ -276,7 +276,7 @@ jobs:
       env:
         NAME: ${{ env.NAME }}
       run: |
-        COMMIT_MESSAGE="feat(${{ env.NAME }}): preview (${{ github.event.pull_request.head.sha }})"
+        COMMIT_MESSAGE="feat(${{ env.NAME }}): preview ${{ github.event.pull_request.head.sha }}"
         echo "COMMIT_MESSAGE=${COMMIT_MESSAGE}" >> $GITHUB_ENV
 
     - name: Commit Env Changes
