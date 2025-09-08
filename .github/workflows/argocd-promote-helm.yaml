@@ -375,19 +375,14 @@ jobs:
 
     - name: "[Preview][PR] Create Preview Pull Request"
       if: inputs.create_pull_request && inputs.preview
-      uses: peter-evans/create-pull-request@v7
       env:
-        NAME: ${{ env.NAME }}
+        GH_TOKEN: ${{ secrets.GH_PAT }}
         PR_TITLE: ${{ env.PR_TITLE }}
         PR_BODY: ${{ env.PR_BODY }}
         PR_BRANCH: ${{ env.PR_BRANCH }}
-      with:
-        path: environment
-        branch: ${{ env.PR_BRANCH }}
-        token: ${{ secrets.GH_PAT }}
-        title: ${{ env.PR_TITLE }}
-        body: ${{ env.PR_BODY }}
-        base: main
+      run: |
+        cd environment
+        gh pr create --repo ${{ inputs.environment_repository }} --title "${{ env.PR_TITLE }}" --body "${{ env.PR_BODY }}" --base main --head ${{ env.PR_BRANCH }}
 
     - name: "[Preview] Find Comment"
       if: inputs.preview
