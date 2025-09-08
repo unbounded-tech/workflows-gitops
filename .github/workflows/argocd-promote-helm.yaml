@@ -337,7 +337,7 @@ jobs:
           git commit -m "${{ env.COMMIT_MESSAGE }}"
         fi
 
-    - name: Push main
+    - name: Push Environment Changes
       if: inputs.create_pull_request == false
       uses: ad-m/github-push-action@master
       with:
@@ -345,8 +345,8 @@ jobs:
         github_token: ${{ secrets.GH_PAT }}
         repository: ${{ inputs.environment_repository }}
 
-    - name: Create Pull Request
-      if: inputs.create_pull_request
+    - name: Create Promotion Pull Request
+      if: inputs.create_pull_request && inputs.preview == false
       uses: peter-evans/create-pull-request@v7
       env:
         NAME: ${{ env.NAME }}
@@ -359,6 +359,22 @@ jobs:
         token: ${{ secrets.GH_PAT }}
         title: ${{ env.PR_TITLE }}
         body: ${{ env.PR_BODY }}
+
+    - name: Create Preview Pull Request
+      if: inputs.create_pull_request && inputs.preview
+      uses: peter-evans/create-pull-request@v7
+      env:
+        NAME: ${{ env.NAME }}
+        PR_TITLE: ${{ env.PR_TITLE }}
+        PR_BODY: ${{ env.PR_BODY }}
+        PR_BRANCH: ${{ env.PR_BRANCH }}
+      with:
+        path: environment
+        branch: ${{ env.PR_BRANCH }}
+        token: ${{ secrets.GH_PAT }}
+        title: ${{ env.PR_TITLE }}
+        body: ${{ env.PR_BODY }}
+        base: main
 
     - name: Find Comment
       if: inputs.preview
