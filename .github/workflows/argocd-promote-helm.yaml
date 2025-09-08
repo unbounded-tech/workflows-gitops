@@ -262,9 +262,27 @@ jobs:
 
         cat "$DESTINATION_YAML"
 
+
+    - name: Set PR Commit Message
+      if: inputs.preview == false
+      env:
+        NAME: ${{ env.NAME }}
+      run: |
+        COMMIT_MESSAGE="feat(${{ env.NAME }}): promote to ${{ github.ref_name }}"
+        echo "COMMIT_MESSAGE=${COMMIT_MESSAGE}" >> $GITHUB_ENV
+
+    - name: Set Preview PR Commit Message
+      if: inputs.preview
+      env:
+        NAME: ${{ env.NAME }}
+      run: |
+        COMMIT_MESSAGE="feat(${{ env.NAME }}): preview (${{ github.event.pull_request.head.sha }})"
+        echo "COMMIT_MESSAGE=${COMMIT_MESSAGE}" >> $GITHUB_ENV
+
     - name: Commit Env Changes
       env:
         NAME: ${{ env.NAME }}
+        COMMIT_MESSAGE: ${{ env.COMMIT_MESSAGE }}
       run: |
         cd environment
 
@@ -278,7 +296,7 @@ jobs:
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"   
           git add -A
-          git commit -m "feat(${{ env.NAME }}): promote to ${{ github.ref_name }}"
+          git commit -m "${{ env.COMMIT_MESSAGE }}"
         fi
 
     - name: Push main
