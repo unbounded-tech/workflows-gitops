@@ -49,6 +49,11 @@ on:
         default: |
           Your preview environment has been published! :rocket:
 
+      comment_body_includes_text:
+        required: false
+        type: string
+        default: "Your preview environment"
+
     secrets:
       GH_PAT:
         required: true
@@ -276,7 +281,7 @@ jobs:
       env:
         NAME: ${{ env.NAME }}
       run: |
-        COMMIT_MESSAGE="feat(${{ github.event.repository.name }}): preview ${{ env.NAME }} ${{ github.event.pull_request.head.sha }}\n\nView PR: ${{ github.event.pull_request.html_url }}"
+        COMMIT_MESSAGE="feat(${{ github.event.repository.name }}): pr-${{ github.event.pull_request.number }}-${{ github.event.pull_request.head.sha }}\n\nView PR: ${{ github.event.pull_request.html_url }}"
         echo "COMMIT_MESSAGE=${COMMIT_MESSAGE}" >> $GITHUB_ENV
 
     - name: Commit Env Changes
@@ -306,18 +311,45 @@ jobs:
         directory: environment
         github_token: ${{ secrets.GH_PAT }}
         repository: ${{ inputs.environment_repository }}
-    
+
+    - name: Set PR Title, Body, and Branch
+      if: inputs.create_pull_request && inputs.preview == false
+      env:
+        NAME: ${{ env.NAME }}
+      run: |
+        PR_TITLE="${{ env.NAME }} to ${{ github.ref_name }}"
+        PR_BODY="Promotes ${{ env.NAME }} to ${{ github.ref_name }}"
+        PR_BRANCH="promote/${{ env.NAME }}-${{ github.ref_name }}"
+        echo "PR_TITLE=$PR_TITLE" >> $GITHUB_ENV
+        echo "PR_BODY=$PR_BODY" >> $GITHUB_ENV
+        echo "PR_BRANCH=$PR_BRANCH" >> $GITHUB_ENV
+
+    - name: Set Preview PR Title, Body, and Branch
+      if: inputs.create_pull_request && inputs.preview
+      env:
+        NAME: ${{ env.NAME }}
+      run: |
+        PR_TITLE="Preview ${{ github.event.repository.name }} for PR #${{ github.event.pull_request.number }}"
+        PR_BODY="Creates a preview environment for ${{ github.event.repository.name }} for PR #${{ github.event.pull_request.number }}\n\nView PR: ${{ github.event.pull_request.html_url }}"
+        PR_BRANCH="preview/${{ env.NAME }}-${{ github.event.pull_request.head.sha }}"
+        echo "PR_TITLE=$PR_TITLE" >> $GITHUB_ENV
+        echo "PR_BODY=$PR_BODY" >> $GITHUB_ENV
+        echo "PR_BRANCH=$PR_BRANCH" >> $GITHUB_ENV
+
     - name: Create Pull Request
       if: inputs.create_pull_request
       uses: peter-evans/create-pull-request@v7
       env:
         NAME: ${{ env.NAME }}
+        PR_TITLE: ${{ env.PR_TITLE }}
+        PR_BODY: ${{ env.PR_BODY }}
+        PR_BRANCH: ${{ env.PR_BRANCH }}
       with:
         path: environment
-        branch: promote/${{ env.NAME }}-${{ github.ref_name }}
+        branch: ${{ env.PR_BRANCH }}
         token: ${{ secrets.GH_PAT }}
-        title: ${{ env.NAME }} to ${{ github.ref_name }}
-        body: Promotes ${{ env.NAME }} to ${{ github.ref_name }}
+        title: ${{ env.PR_TITLE }}
+        body: ${{ env.PR_BODY }}
 
     - name: Find Comment
       if: inputs.preview
@@ -326,7 +358,7 @@ jobs:
       with:
         issue-number: ${{ github.event.pull_request.number }}
         comment-author: 'github-actions[bot]'
-        body-includes: Your preview environment
+        body-includes: ${{ inputs.comment_body_includes_text }}
 
     - name: Create or update comment
       if: inputs.preview
