@@ -79,33 +79,33 @@ jobs:
     - name: Setup Helm
       uses: azure/setup-helm@v4
 
-    - name: set name env
+    - name: Set Name
       if: inputs.preview == false
       run: |
         NAME="${{ inputs.name || github.event.repository.name }}"
         echo "NAME=$NAME" >> $GITHUB_ENV
 
-    - name: set preview name env
+    - name: "[Preview] Set Name"
       if: inputs.preview
       run: |
         NAME="${{ inputs.name || github.event.repository.name }}-pr-${{ github.event.pull_request.number }}"
         echo "NAME=$NAME" >> $GITHUB_ENV
 
-    - name: Set Argo Name env
+    - name: Set Argo Application Name
       env:
         NAME: ${{ env.NAME }}
       run: |
         ARGO_NAME=${{ inputs.project }}-${{ env.NAME }}
         echo "ARGO_NAME=$ARGO_NAME" >> $GITHUB_ENV
 
-    - name: Set DESTINATION_YAML Environment Variables
+    - name: Set Output Destination
       env:
         NAME: ${{ env.NAME }}
       run: |
         DESTINATION_YAML="environment/${{ inputs.destination_path }}/${{ env.NAME }}.yaml"
         echo "DESTINATION_YAML=$DESTINATION_YAML" >> $GITHUB_ENV
 
-    - name: Set PR Title, Body, and Branch
+    - name: "[PR] Set PR Title, Body, and Branch"
       if: inputs.create_pull_request && inputs.preview == false
       env:
         NAME: ${{ env.NAME }}
@@ -117,7 +117,7 @@ jobs:
         echo "PR_BODY=$PR_BODY" >> $GITHUB_ENV
         echo "PR_BRANCH=$PR_BRANCH" >> $GITHUB_ENV
 
-    - name: Set Preview PR Title, Body, and Branch
+    - name: "[Preview][PR] Set PR Title, Body, and Branch"
       if: inputs.create_pull_request && inputs.preview
       env:
         NAME: ${{ env.NAME }}
@@ -137,7 +137,7 @@ jobs:
         COMMIT_MESSAGE="feat(${{ env.NAME }}): promote to https://github.com/${{ github.repository }}/releases/tag/${{ github.ref_name }}"
         echo "COMMIT_MESSAGE=${COMMIT_MESSAGE}" >> $GITHUB_ENV
 
-    - name: Set Preview Commit Message
+    - name: "[Preview] Set Commit Message"
       if: inputs.preview
       env:
         NAME: ${{ env.NAME }}
@@ -152,7 +152,7 @@ jobs:
         repository: ${{ inputs.environment_repository }}
         token: ${{ secrets.GH_PAT }}
 
-    - name: Create or Checkout Preview Branch
+    - name: "[Preview] Create or Checkout Preview Branch"
       if: inputs.preview
       env:
         PR_BRANCH: ${{ env.PR_BRANCH }}
@@ -161,7 +161,7 @@ jobs:
         git fetch origin $PR_BRANCH || git checkout -b $PR_BRANCH
         git checkout $PR_BRANCH
 
-    - name: Save existing argo values
+    - name: Save Existing Argo Application Values
       id: save_values
       env:
         ARGO_NAME: $${{ env.ARGO_NAME }}
@@ -205,7 +205,7 @@ jobs:
         echo "Existing values:"
         cat existing_values.yaml
 
-    - name: Create Application in Environment from Promote Helm Chart
+    - name: Create Argo Application in Environment From Helm Chart
       if: ${{ inputs.preview == false }}
       env:
         NAME: ${{ env.NAME }}
@@ -221,7 +221,7 @@ jobs:
           --set-literal values="${{ inputs.values }}" \
           > "${{ env.DESTINATION_YAML }}"
     
-    - name: Create Preview Application in Environment from Promote Helm Chart
+    - name: "[Preview] Create Argo Application in Environment From Helm Chart"
       if: inputs.preview
       env:
         NAME: ${{ env.NAME }}
@@ -238,7 +238,7 @@ jobs:
           --set-literal values="${{ inputs.values }}" \
           > "${{ env.DESTINATION_YAML }}"
 
-    - name: Store new Argo CD values
+    - name: Store New Argo Application Values
       id: store_new_values
       env:
         ARGO_NAME: ${{ env.ARGO_NAME }}
@@ -268,7 +268,7 @@ jobs:
         echo "New values:"
         cat new_values.yaml
 
-    - name: Merge Argo CD Values
+    - name: Merge Argo Application Values
       id: merge_values
       run: |
         # Merge the values, with new values taking precedence
@@ -316,7 +316,7 @@ jobs:
         cat "$DESTINATION_YAML"
 
 
-    - name: Commit Env Changes
+    - name: Commit Environment Changes
       env:
         NAME: ${{ env.NAME }}
         COMMIT_MESSAGE: ${{ env.COMMIT_MESSAGE }}
@@ -346,7 +346,7 @@ jobs:
         repository: ${{ inputs.environment_repository }}
 
     # handles push with PR creation
-    - name: Create Promotion Pull Request
+    - name: "[PR] Create Promotion Pull Request"
       if: inputs.create_pull_request && inputs.preview == false
       uses: peter-evans/create-pull-request@v7
       env:
@@ -362,7 +362,7 @@ jobs:
         body: ${{ env.PR_BODY }}
 
     # Preview push / PR
-    - name: Push Preview Environment Changes
+    - name: "[Preview][PR] Push Environment Changes"
       if: inputs.create_pull_request && inputs.preview
       uses: ad-m/github-push-action@master
       env:
@@ -373,7 +373,7 @@ jobs:
         repository: ${{ inputs.environment_repository }}
         branch: ${{ env.PR_BRANCH }}
 
-    - name: Create Preview Pull Request
+    - name: "[Preview][PR] Create Preview Pull Request"
       if: inputs.create_pull_request && inputs.preview
       uses: peter-evans/create-pull-request@v7
       env:
@@ -389,7 +389,7 @@ jobs:
         body: ${{ env.PR_BODY }}
         base: main
 
-    - name: Find Comment
+    - name: "[Preview] Find Comment"
       if: inputs.preview
       uses: peter-evans/find-comment@v2
       id: fc
@@ -398,7 +398,7 @@ jobs:
         comment-author: 'github-actions[bot]'
         body-includes: ${{ inputs.comment_body_includes_text }}
 
-    - name: Create or update comment
+    - name: "[Preview] Create or Update Comment"
       if: inputs.preview
       uses: peter-evans/create-or-update-comment@v2
       with:
