@@ -150,7 +150,6 @@ jobs:
       with: 
         path: environment
         repository: ${{ inputs.environment_repository }}
-        persist-credentials: false
         token: ${{ secrets.GH_PAT }}
 
     - name: Create or Checkout Preview Branch
