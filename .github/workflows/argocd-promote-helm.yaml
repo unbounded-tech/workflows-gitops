@@ -273,7 +273,7 @@ jobs:
       env:
         NAME: ${{ env.NAME }}
       run: |
-        COMMIT_MESSAGE="feat(${{ env.NAME }}): promote to ${{ github.ref_name }}"
+        COMMIT_MESSAGE="feat(${{ env.NAME }}): promote to https://github.com/${{ github.repository }}/releases/tag/${{ github.ref_name }}"
         echo "COMMIT_MESSAGE=${COMMIT_MESSAGE}" >> $GITHUB_ENV
 
     - name: Set Preview PR Commit Message
@@ -281,7 +281,7 @@ jobs:
       env:
         NAME: ${{ env.NAME }}
       run: |
-        COMMIT_MESSAGE="feat(${{ github.event.repository.name }}): pr-${{ github.event.pull_request.number }}-${{ github.event.pull_request.head.sha }}\n\nView PR: ${{ github.event.pull_request.html_url }}"
+        COMMIT_MESSAGE="feat(${{ github.event.repository.name }}): preview ${{ github.event.pull_request.html_url }} ${{ github.event.pull_request.head.sha }}"
         echo "COMMIT_MESSAGE=${COMMIT_MESSAGE}" >> $GITHUB_ENV
 
     - name: Commit Env Changes
