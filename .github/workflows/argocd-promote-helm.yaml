@@ -124,7 +124,7 @@ jobs:
       run: |
         PR_TITLE="Preview ${{ env.NAME }}"
         PR_BODY="Preview environment for ${{ github.event.pull_request.html_url }}"
-        PR_BRANCH="preview/${{ env.NAME }}-${{ github.event.pull_request.head.sha }}"
+        PR_BRANCH="preview/${{ env.NAME }}"
         echo "PR_TITLE=$PR_TITLE" >> $GITHUB_ENV
         echo "PR_BODY=$PR_BODY" >> $GITHUB_ENV
         echo "PR_BRANCH=$PR_BRANCH" >> $GITHUB_ENV
@@ -336,8 +336,9 @@ jobs:
           git commit -m "${{ env.COMMIT_MESSAGE }}"
         fi
 
+    # Promotion push / PR
     - name: Push Environment Changes
-      if: inputs.create_pull_request == false
+      if: inputs.create_pull_request == false && inputs.preview == false
       uses: ad-m/github-push-action@master
       with:
         directory: environment
@@ -358,6 +359,15 @@ jobs:
         token: ${{ secrets.GH_PAT }}
         title: ${{ env.PR_TITLE }}
         body: ${{ env.PR_BODY }}
+
+    # Preview push / PR
+    - name: Push Preview Environment Changes
+      if: inputs.create_pull_request && inputs.preview
+      uses: ad-m/github-push-action@master
+      with:
+        directory: environment
+        github_token: ${{ secrets.GH_PAT }}
+        repository: ${{ inputs.environment_repository }}
 
     - name: Create Preview Pull Request
       if: inputs.create_pull_request && inputs.preview
