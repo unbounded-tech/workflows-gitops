@@ -317,6 +317,7 @@ jobs:
 
 
     - name: Commit Environment Changes
+      id: commit_changes
       env:
         NAME: ${{ env.NAME }}
         COMMIT_MESSAGE: ${{ env.COMMIT_MESSAGE }}
@@ -327,18 +328,20 @@ jobs:
           # Working directory clean
 
           echo "No changes to commit"
-        else 
+          echo "committed_changes=false" >> $GITHUB_OUTPUT
+        else
           # Uncommitted changes
 
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
-          git config --local user.name "github-actions[bot]"   
+          git config --local user.name "github-actions[bot]"
           git add -A
           git commit -m "${{ env.COMMIT_MESSAGE }}"
+          echo "committed_changes=true" >> $GITHUB_OUTPUT
         fi
 
     # Promotion push / PR
     - name: Push Environment Changes
-      if: inputs.create_pull_request == false && inputs.preview == false
+      if: inputs.create_pull_request == false && inputs.preview == false && steps.commit_changes.outputs.committed_changes == 'true'
       uses: ad-m/github-push-action@master
       with:
         directory: environment
@@ -347,7 +350,7 @@ jobs:
 
     # handles push with PR creation
     - name: "[PR] Create Promotion Pull Request"
-      if: inputs.create_pull_request && inputs.preview == false
+      if: inputs.create_pull_request && inputs.preview == false && steps.commit_changes.outputs.committed_changes == 'true'
       uses: peter-evans/create-pull-request@v7
       env:
         NAME: ${{ env.NAME }}
@@ -363,7 +366,7 @@ jobs:
 
     # Preview push / PR
     - name: "[Preview][PR] Push Environment Changes"
-      if: inputs.create_pull_request && inputs.preview
+      if: inputs.create_pull_request && inputs.preview && steps.commit_changes.outputs.committed_changes == 'true'
       uses: ad-m/github-push-action@master
       env:
         PR_BRANCH: ${{ env.PR_BRANCH }}
@@ -374,7 +377,7 @@ jobs:
         branch: ${{ env.PR_BRANCH }}
 
     - name: "[Preview][PR] Create Preview Pull Request"
-      if: inputs.create_pull_request && inputs.preview
+      if: inputs.create_pull_request && inputs.preview && steps.commit_changes.outputs.committed_changes == 'true'
       env:
         GH_TOKEN: ${{ secrets.GH_PAT }}
         PR_TITLE: ${{ env.PR_TITLE }}
