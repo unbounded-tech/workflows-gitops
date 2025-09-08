@@ -316,9 +316,10 @@ jobs:
       if: inputs.create_pull_request && inputs.preview == false
       env:
         NAME: ${{ env.NAME }}
+        COMMIT_MESSAGE: ${{ env.COMMIT_MESSAGE }}
       run: |
-        PR_TITLE="${{ env.NAME }} to ${{ github.ref_name }}"
-        PR_BODY="Promotes ${{ env.NAME }} to ${{ github.ref_name }}"
+        PR_TITLE="${COMMIT_MESSAGE}"
+        PR_BODY="Promotes ${{ env.NAME }} to https://github.com/${{ github.repository }}/releases/tag/${{ github.ref_name }}"
         PR_BRANCH="promote/${{ env.NAME }}-${{ github.ref_name }}"
         echo "PR_TITLE=$PR_TITLE" >> $GITHUB_ENV
         echo "PR_BODY=$PR_BODY" >> $GITHUB_ENV
@@ -328,9 +329,10 @@ jobs:
       if: inputs.create_pull_request && inputs.preview
       env:
         NAME: ${{ env.NAME }}
+        COMMIT_MESSAGE: ${{ env.COMMIT_MESSAGE }}
       run: |
-        PR_TITLE="Preview ${{ github.event.repository.name }} for PR #${{ github.event.pull_request.number }}"
-        PR_BODY="Creates a preview environment for ${{ github.event.repository.name }} for PR #${{ github.event.pull_request.number }}\n\nView PR: ${{ github.event.pull_request.html_url }}"
+        PR_TITLE="${COMMIT_MESSAGE}"
+        PR_BODY="Preview environment for ${{ github.event.pull_request.html_url }}"
         PR_BRANCH="preview/${{ env.NAME }}-${{ github.event.pull_request.head.sha }}"
         echo "PR_TITLE=$PR_TITLE" >> $GITHUB_ENV
         echo "PR_BODY=$PR_BODY" >> $GITHUB_ENV
