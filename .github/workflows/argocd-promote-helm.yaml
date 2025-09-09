@@ -385,7 +385,14 @@ jobs:
         PR_BRANCH: ${{ env.PR_BRANCH }}
       run: |
         cd environment
-        gh pr create --repo ${{ inputs.environment_repository }} --title "${{ env.PR_TITLE }}" --body "${{ env.PR_BODY }}" --base main --head ${{ env.PR_BRANCH }}
+        # Check if PR already exists
+        EXISTING_PR=$(gh pr list --head ${{ env.PR_BRANCH }} --repo ${{ inputs.environment_repository }} --json number --jq '.[0].number' || echo "")
+        if [ -n "$EXISTING_PR" ]; then
+          echo "PR already exists with head branch ${{ env.PR_BRANCH }} (PR #$EXISTING_PR), skipping creation"
+        else
+          echo "Creating new PR with head branch ${{ env.PR_BRANCH }}"
+          gh pr create --repo ${{ inputs.environment_repository }} --title "${{ env.PR_TITLE }}" --body "${{ env.PR_BODY }}" --base main --head ${{ env.PR_BRANCH }}
+        fi
 
     - name: "[Preview] Find Comment"
       if: inputs.preview
