@@ -339,6 +339,12 @@ jobs:
           echo "committed_changes=true" >> $GITHUB_OUTPUT
         fi
 
+    - name: Log Push / PR Details
+      run: |
+        echo "Changes committed: ${{ steps.commit_changes.outputs.committed_changes }}"
+        echo "Create Pull Request: ${{ inputs.create_pull_request }}"
+        echo "Preview Mode: ${{ inputs.preview }}"
+
     # Promotion push / PR
     - name: Push Environment Changes
       if: inputs.create_pull_request == false && steps.commit_changes.outputs.committed_changes == 'true'
