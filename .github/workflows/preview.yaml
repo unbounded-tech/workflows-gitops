@@ -98,7 +98,7 @@ jobs:
         cache-to: type=registry,ref=ghcr.io/${{ env.REPO }}-integration-tests:buildcache,mode=max
 
     - name: Setup Helm
-      uses: azure/setup-helm@v3
+      uses: azure/setup-helm@v4
     
     - name: Checkout Preview Environments Project
       uses: actions/checkout@v3
