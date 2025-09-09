@@ -341,7 +341,7 @@ jobs:
 
     # Promotion push / PR
     - name: Push Environment Changes
-      if: inputs.create_pull_request == false && inputs.preview == false && steps.commit_changes.outputs.committed_changes == 'true'
+      if: inputs.create_pull_request == false && steps.commit_changes.outputs.committed_changes == 'true'
       uses: ad-m/github-push-action@master
       with:
         directory: environment
