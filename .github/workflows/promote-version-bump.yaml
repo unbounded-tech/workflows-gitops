@@ -25,19 +25,19 @@ jobs:
       pull-requests: write
 
     steps:
-    - name: Checkout production environment
-      uses: actions/checkout@v3
+    - name: Checkout environment
+      uses: actions/checkout@v5
       with:
         repository: ${{ inputs.environment_repository }}
         persist-credentials: false
         fetch-depth: 0
 
-    - name: Update prod environment
+    - name: Update environment
       uses: mikefarah/yq@master
       with:
         cmd: yq -i '.spec.source.targetRevision = "${{ github.ref_name }}"' helm/templates/${{ github.event.repository.name }}.yaml
 
-    - name: Commit Prod Env Changes
+    - name: Commit Env Changes
       run: |
         if output=$(git status --porcelain) && [ -z "$output" ]; then
           # Working directory clean
