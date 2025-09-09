@@ -83,13 +83,17 @@ jobs:
       if: inputs.preview == false
       run: |
         NAME="${{ inputs.name || github.event.repository.name }}"
+        FILE_NAME="${{ github.event.repository.name }}"
         echo "NAME=$NAME" >> $GITHUB_ENV
+        echo "FILE_NAME=$FILE_NAME" >> $GITHUB_ENV
 
     - name: "[Preview] Set Name"
       if: inputs.preview
       run: |
         NAME="${{ inputs.name || github.event.repository.name }}-pr-${{ github.event.pull_request.number }}"
+        FILE_NAME="${{ github.event.repository.name }}-pr-${{ github.event.pull_request.number }}"
         echo "NAME=$NAME" >> $GITHUB_ENV
+        echo "FILE_NAME=$FILE_NAME" >> $GITHUB_ENV
 
     - name: Set Argo Application Name
       env:
@@ -100,9 +104,9 @@ jobs:
 
     - name: Set Output Destination
       env:
-        NAME: ${{ env.NAME }}
+        FILE_NAME: ${{ env.FILE_NAME }}
       run: |
-        DESTINATION_YAML="environment/${{ inputs.destination_path }}/${{ env.NAME }}.yaml"
+        DESTINATION_YAML="environment/${{ inputs.destination_path }}/${{ env.FILE_NAME }}.yaml"
         echo "DESTINATION_YAML=$DESTINATION_YAML" >> $GITHUB_ENV
 
     - name: "[PR] Set PR Title, Body, and Branch"
@@ -202,9 +206,6 @@ jobs:
           echo "Destination file does not exist, using only new values."
         fi
 
-        echo "Existing values:"
-        cat existing_values.yaml
-
     - name: Create Argo Application in Environment From Helm Chart
       if: ${{ inputs.preview == false }}
       env:
@@ -220,7 +221,9 @@ jobs:
           --set project=${{ inputs.project }} \
           --set-literal values="${{ inputs.values }}" \
           > "${{ env.DESTINATION_YAML }}"
-    
+
+        cat "${{ env.DESTINATION_YAML }}"
+
     - name: "[Preview] Create Argo Application in Environment From Helm Chart"
       if: inputs.preview
       env:
@@ -237,6 +240,8 @@ jobs:
           --set project=${{ inputs.project }} \
           --set-literal values="${{ inputs.values }}" \
           > "${{ env.DESTINATION_YAML }}"
+
+        cat "${{ env.DESTINATION_YAML }}"
 
     - name: Store New Argo Application Values
       id: store_new_values
@@ -319,7 +324,6 @@ jobs:
     - name: Commit Environment Changes
       id: commit_changes
       env:
-        NAME: ${{ env.NAME }}
         COMMIT_MESSAGE: ${{ env.COMMIT_MESSAGE }}
       run: |
         cd environment
@@ -359,7 +363,6 @@ jobs:
       if: inputs.create_pull_request && inputs.preview == false && steps.commit_changes.outputs.committed_changes == 'true'
       uses: peter-evans/create-pull-request@v7
       env:
-        NAME: ${{ env.NAME }}
         PR_TITLE: ${{ env.PR_TITLE }}
         PR_BODY: ${{ env.PR_BODY }}
         PR_BRANCH: ${{ env.PR_BRANCH }}
