@@ -405,7 +405,7 @@ jobs:
 
     - name: "[Preview] Find Comment"
       if: inputs.preview
-      uses: peter-evans/find-comment@v2
+      uses: peter-evans/find-comment@v3
       id: fc
       with:
         issue-number: ${{ github.event.pull_request.number }}
