@@ -51,7 +51,7 @@ jobs:
         body-includes: Your preview environment has been removed.
 
     - name: Create comment about garbage collection
-      uses: peter-evans/create-or-update-comment@v2
+      uses: peter-evans/create-or-update-comment@v4
       with:
         comment-id: ${{ steps.fc.outputs.comment-id }}
         issue-number: ${{ github.event.pull_request.number }}
