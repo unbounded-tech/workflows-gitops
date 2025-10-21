@@ -219,7 +219,7 @@ jobs:
           --set application.repository=https://github.com/${{ github.repository }}.git \
           --set application.destination.namespace=${{ inputs.project }} \
           --set project=${{ inputs.project }} \
-          --set-literal values="${{ inputs.values }}" \
+          --set-literal application.values="${{ inputs.values }}" \
           > "${{ env.DESTINATION_YAML }}"
 
         cat "${{ env.DESTINATION_YAML }}"
@@ -239,7 +239,7 @@ jobs:
           --set application.image.tag=pr-${{ github.event.pull_request.number }}-${{ github.event.pull_request.head.sha }} \
           --set project=${{ inputs.project }} \
           --set preview=true \
-          --set-literal values="${{ inputs.values }}" \
+          --set-literal application.values="${{ inputs.values }}" \
           > "${{ env.DESTINATION_YAML }}"
 
         cat "${{ env.DESTINATION_YAML }}"
