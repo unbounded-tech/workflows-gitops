@@ -76,9 +76,6 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v5
 
-    - name: Setup Helm
-      uses: azure/setup-helm@v4
-
     - name: Set Name
       if: inputs.preview == false
       run: |
