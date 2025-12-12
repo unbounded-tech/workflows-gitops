@@ -74,7 +74,7 @@ jobs:
     steps:
 
     - name: Checkout repository
-      uses: actions/checkout@v5
+      uses: actions/checkout@v6
 
     - name: Set Name
       if: inputs.preview == false
@@ -147,7 +147,7 @@ jobs:
         echo "COMMIT_MESSAGE=${COMMIT_MESSAGE}" >> $GITHUB_ENV
 
     - name: Checkout Environment Project
-      uses: actions/checkout@v5
+      uses: actions/checkout@v6
       with: 
         path: environment
         repository: ${{ inputs.environment_repository }}
