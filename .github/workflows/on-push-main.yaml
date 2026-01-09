@@ -10,7 +10,7 @@ permissions:
 
 jobs:
 
-  test-promotion:
+  test-argocd-promote-helm:
     name: Test Promotion (Dry Run)
     uses: ./.github/workflows/argocd-promote-helm.yaml
     with:
@@ -28,8 +28,9 @@ jobs:
 
   version-and-tag:
     name: Version and Tag
+    needs: 
+      - test-argocd-promote-helm
     uses: unbounded-tech/workflow-vnext-tag/.github/workflows/workflow.yaml@v1.19.2
     secrets: inherit
     with:
       useDeployKey: true
-      

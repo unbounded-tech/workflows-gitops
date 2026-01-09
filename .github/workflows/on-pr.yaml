@@ -6,7 +6,7 @@ on:
       - main
 
 jobs:
-  test-preview-pr:
+  test-argocd-promote-helm:
     name: Test Preview (PR Mode)
     uses: ./.github/workflows/argocd-promote-helm.yaml
     with:

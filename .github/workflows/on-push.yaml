@@ -7,7 +7,7 @@ on:
       - '!main'
 
 jobs:
-  test-preview-push:
+  test-argocd-promote-helm:
     name: Test Preview (Push Mode)
     uses: ./.github/workflows/argocd-promote-helm.yaml
     with:
