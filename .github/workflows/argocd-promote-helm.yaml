@@ -397,6 +397,13 @@ jobs:
           # Uncommitted changes
           echo "has_changes=true" >> $GITHUB_OUTPUT
 
+          # Capture diff for dry run reporting
+          {
+            echo 'diff<<EOF'
+            git diff --no-color | head -200
+            echo 'EOF'
+          } >> $GITHUB_OUTPUT
+
           if [ "${{ inputs.dry_run }}" == "true" ]; then
             echo "[DRY RUN] Would commit changes with message: ${{ env.COMMIT_MESSAGE }}"
             echo "committed_changes=false" >> $GITHUB_OUTPUT
@@ -545,15 +552,33 @@ jobs:
 
           Workflow validation completed successfully.
 
+          ### Settings
+          | Setting | Value |
+          |---------|-------|
+          | Environment Repository | `${{ inputs.environment_repository }}` |
+          | Project | `${{ inputs.project }}` |
+          | Application Name | `${{ env.ARGO_NAME }}` |
+          | Output File | `${{ env.DESTINATION_YAML }}` |
+          | Preview Mode | `${{ inputs.preview_mode }}` |
+          | Create PR | `${{ inputs.create_pull_request }}` |
+
           ### Completed
           - Helm template generated for `${{ env.ARGO_NAME }}`
-          - Output file: `${{ env.DESTINATION_YAML }}`
           - Changes detected: ${{ steps.commit_changes.outputs.has_changes == 'true' && 'Yes' || 'No' }}
 
           ### Skipped (dry run)
           - Commit to environment repository
           - Push to `${{ inputs.environment_repository }}`
           - PR creation in environment repository
+
+          <details>
+          <summary>Environment Diff</summary>
+
+          ```diff
+          ${{ steps.commit_changes.outputs.diff }}
+          ```
+
+          </details>
 
           > This was a dry run. No changes were made to the environment repository.
         edit-mode: replace
