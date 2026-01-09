@@ -33,9 +33,7 @@ jobs:
         fetch-depth: 0
 
     - name: Update environment
-      uses: mikefarah/yq@master
-      with:
-        cmd: yq -i '.spec.source.targetRevision = "${{ github.ref_name }}"' helm/templates/${{ github.event.repository.name }}.yaml
+      run: yq -i '.spec.source.targetRevision = "${{ github.ref_name }}"' helm/templates/${{ github.event.repository.name }}.yaml
 
     - name: Commit Env Changes
       run: |
@@ -52,12 +50,12 @@ jobs:
           git commit -m "feat(${{ github.event.repository.name }}): Promote ${{ github.event.repository.name }} to ${{ github.ref_name }}"
         fi
 
-    - name: Push main
+    - name: Push changes
       if: inputs.pull_request == false
-      uses: ad-m/github-push-action@master
-      with:
-        github_token: ${{ secrets.GH_ORG_TOKEN }}
-        repository: ${{ inputs.environment_repository }}
+      run: |
+        # Detect default branch from remote
+        DEFAULT_BRANCH=$(git symbolic-ref refs/remotes/origin/HEAD | sed 's@^refs/remotes/origin/@@')
+        git push https://x-access-token:${{ secrets.GH_ORG_TOKEN }}@github.com/${{ inputs.environment_repository }}.git HEAD:refs/heads/${DEFAULT_BRANCH}
     
     - name: Create Pull Request
       if: inputs.pull_request
