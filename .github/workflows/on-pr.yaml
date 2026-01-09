@@ -1,0 +1,24 @@
+name: on-pr
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  test-preview-pr:
+    name: Test Preview (PR Mode)
+    uses: ./.github/workflows/argocd-promote-helm.yaml
+    with:
+      project: test-project
+      environment_name: test
+      environment_repository: ${{ github.repository }}
+      preview: true
+      preview_mode: pr
+      create_pull_request: true
+      dry_run: true
+      values: |
+        image:
+          tag: pr-${{ github.event.pull_request.number }}
+    secrets:
+      GH_PAT: ${{ secrets.GITHUB_TOKEN }}

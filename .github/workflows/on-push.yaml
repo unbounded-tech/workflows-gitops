@@ -1,0 +1,25 @@
+name: on-push
+
+on:
+  push:
+    branches:
+      - '**'
+      - '!main'
+
+jobs:
+  test-preview-push:
+    name: Test Preview (Push Mode)
+    uses: ./.github/workflows/argocd-promote-helm.yaml
+    with:
+      project: test-project
+      environment_name: test
+      environment_repository: ${{ github.repository }}
+      preview: true
+      preview_mode: push
+      create_pull_request: true
+      dry_run: true
+      values: |
+        image:
+          tag: ${{ github.ref_name }}-${{ github.sha }}
+    secrets:
+      GH_PAT: ${{ secrets.GITHUB_TOKEN }}

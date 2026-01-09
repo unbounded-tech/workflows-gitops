@@ -1,0 +1,35 @@
+name: On Push to Main, Version and Tag For Release
+on:
+  push:
+    branches:
+    - main
+
+permissions:
+  packages: write
+  contents: write
+
+jobs:
+
+  test-promotion:
+    name: Test Promotion (Dry Run)
+    uses: ./.github/workflows/argocd-promote-helm.yaml
+    with:
+      project: test-project
+      environment_name: production
+      environment_repository: ${{ github.repository }}
+      preview: false
+      create_pull_request: true
+      dry_run: true
+      values: |
+        image:
+          tag: ${{ github.sha }}
+    secrets:
+      GH_PAT: ${{ secrets.GITHUB_TOKEN }}
+
+  version-and-tag:
+    name: Version and Tag
+    uses: unbounded-tech/workflow-vnext-tag/.github/workflows/workflow.yaml@v1.19.2
+    secrets: inherit
+    with:
+      useDeployKey: true
+      

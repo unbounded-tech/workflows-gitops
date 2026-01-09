@@ -43,16 +43,29 @@ on:
         required: false
         default: false
 
+      preview_mode:
+        type: string
+        required: false
+        default: "pr"
+        description: "Preview mode: 'pr' for pull request previews, 'push' for branch previews"
+
       comment:
         required: false
         type: string
         default: |
+          <!-- argocd-promote-helm-preview -->
           Your preview environment has been published! :rocket:
 
       comment_body_includes_text:
         required: false
         type: string
-        default: "Your preview environment"
+        default: "argocd-promote-helm-preview"
+
+      dry_run:
+        required: false
+        type: boolean
+        default: false
+        description: "If true, skip commit and push steps (useful for testing)"
 
     secrets:
       GH_PAT:
@@ -84,11 +97,21 @@ jobs:
         echo "NAME=$NAME" >> $GITHUB_ENV
         echo "FILE_NAME=$FILE_NAME" >> $GITHUB_ENV
 
-    - name: "[Preview] Set Name"
-      if: inputs.preview
+    - name: "[Preview][PR] Set Name"
+      if: inputs.preview && inputs.preview_mode == 'pr'
       run: |
         NAME="${{ inputs.name || github.event.repository.name }}-pr-${{ github.event.pull_request.number }}"
         FILE_NAME="${{ github.event.repository.name }}-pr-${{ github.event.pull_request.number }}"
+        echo "NAME=$NAME" >> $GITHUB_ENV
+        echo "FILE_NAME=$FILE_NAME" >> $GITHUB_ENV
+
+    - name: "[Preview][Push] Set Name"
+      if: inputs.preview && inputs.preview_mode == 'push'
+      run: |
+        # Sanitize branch name for use in k8s resource names (replace / with -)
+        SANITIZED_BRANCH=$(echo "${{ github.ref_name }}" | sed 's/[^a-zA-Z0-9-]/-/g' | sed 's/--*/-/g' | sed 's/^-//' | sed 's/-$//' | cut -c1-63)
+        NAME="${{ inputs.name || github.event.repository.name }}-${SANITIZED_BRANCH}"
+        FILE_NAME="${{ github.event.repository.name }}-${SANITIZED_BRANCH}"
         echo "NAME=$NAME" >> $GITHUB_ENV
         echo "FILE_NAME=$FILE_NAME" >> $GITHUB_ENV
 
@@ -119,12 +142,24 @@ jobs:
         echo "PR_BRANCH=$PR_BRANCH" >> $GITHUB_ENV
 
     - name: "[Preview][PR] Set PR Title, Body, and Branch"
-      if: inputs.create_pull_request && inputs.preview
+      if: inputs.create_pull_request && inputs.preview && inputs.preview_mode == 'pr'
       env:
         NAME: ${{ env.NAME }}
       run: |
         PR_TITLE="Preview ${{ env.NAME }}"
         PR_BODY="Preview environment for ${{ github.event.pull_request.html_url }}"
+        PR_BRANCH="preview/${{ env.NAME }}"
+        echo "PR_TITLE=$PR_TITLE" >> $GITHUB_ENV
+        echo "PR_BODY=$PR_BODY" >> $GITHUB_ENV
+        echo "PR_BRANCH=$PR_BRANCH" >> $GITHUB_ENV
+
+    - name: "[Preview][Push] Set PR Title, Body, and Branch"
+      if: inputs.create_pull_request && inputs.preview && inputs.preview_mode == 'push'
+      env:
+        NAME: ${{ env.NAME }}
+      run: |
+        PR_TITLE="Preview ${{ env.NAME }}"
+        PR_BODY="Preview environment for branch ${{ github.ref_name }} (commit ${{ github.sha }})"
         PR_BRANCH="preview/${{ env.NAME }}"
         echo "PR_TITLE=$PR_TITLE" >> $GITHUB_ENV
         echo "PR_BODY=$PR_BODY" >> $GITHUB_ENV
@@ -138,12 +173,20 @@ jobs:
         COMMIT_MESSAGE="feat(${{ env.NAME }}): promote to https://github.com/${{ github.repository }}/releases/tag/${{ github.ref_name }}"
         echo "COMMIT_MESSAGE=${COMMIT_MESSAGE}" >> $GITHUB_ENV
 
-    - name: "[Preview] Set Commit Message"
-      if: inputs.preview
+    - name: "[Preview][PR] Set Commit Message"
+      if: inputs.preview && inputs.preview_mode == 'pr'
       env:
         NAME: ${{ env.NAME }}
       run: |
         COMMIT_MESSAGE="feat(${{ github.event.repository.name }}): preview ${{ github.event.pull_request.html_url }} ${{ github.event.pull_request.head.sha }}"
+        echo "COMMIT_MESSAGE=${COMMIT_MESSAGE}" >> $GITHUB_ENV
+
+    - name: "[Preview][Push] Set Commit Message"
+      if: inputs.preview && inputs.preview_mode == 'push'
+      env:
+        NAME: ${{ env.NAME }}
+      run: |
+        COMMIT_MESSAGE="feat(${{ github.event.repository.name }}): preview ${{ github.ref_name }} ${{ github.sha }}"
         echo "COMMIT_MESSAGE=${COMMIT_MESSAGE}" >> $GITHUB_ENV
 
     - name: Checkout Environment Project
@@ -221,8 +264,8 @@ jobs:
 
         cat "${{ env.DESTINATION_YAML }}"
 
-    - name: "[Preview] Create Argo Application in Environment From Helm Chart"
-      if: inputs.preview
+    - name: "[Preview][PR] Create Argo Application in Environment From Helm Chart"
+      if: inputs.preview && inputs.preview_mode == 'pr'
       env:
         NAME: ${{ env.NAME }}
         DESTINATION_YAML: ${{ env.DESTINATION_YAML }}
@@ -234,6 +277,26 @@ jobs:
           --set application.repository=https://github.com/${{ github.repository }}.git \
           --set application.destination.namespace=${{ env.NAME }} \
           --set application.image.tag=pr-${{ github.event.pull_request.number }}-${{ github.event.pull_request.head.sha }} \
+          --set project=${{ inputs.project }} \
+          --set preview=true \
+          --set-literal application.values="${{ inputs.values }}" \
+          > "${{ env.DESTINATION_YAML }}"
+
+        cat "${{ env.DESTINATION_YAML }}"
+
+    - name: "[Preview][Push] Create Argo Application in Environment From Helm Chart"
+      if: inputs.preview && inputs.preview_mode == 'push'
+      env:
+        NAME: ${{ env.NAME }}
+        DESTINATION_YAML: ${{ env.DESTINATION_YAML }}
+      run: |
+        mkdir -p environment/${{ inputs.destination_path }}
+        helm template ${{ inputs.promotion_chart_path }} \
+          --set application.name=${{ env.NAME }} \
+          --set application.targetRevision=${{ github.ref_name }} \
+          --set application.repository=https://github.com/${{ github.repository }}.git \
+          --set application.destination.namespace=${{ env.NAME }} \
+          --set application.image.tag=${{ github.ref_name }}-${{ github.sha }} \
           --set project=${{ inputs.project }} \
           --set preview=true \
           --set-literal application.values="${{ inputs.values }}" \
@@ -328,38 +391,58 @@ jobs:
 
         if output=$(git status --porcelain) && [ -z "$output" ]; then
           # Working directory clean
-
           echo "No changes to commit"
           echo "committed_changes=false" >> $GITHUB_OUTPUT
         else
           # Uncommitted changes
+          echo "has_changes=true" >> $GITHUB_OUTPUT
 
-          git config --local user.email "github-actions[bot]@users.noreply.github.com"
-          git config --local user.name "github-actions[bot]"
-          git add -A
-          git commit -m "${{ env.COMMIT_MESSAGE }}"
-          echo "committed_changes=true" >> $GITHUB_OUTPUT
+          if [ "${{ inputs.dry_run }}" == "true" ]; then
+            echo "[DRY RUN] Would commit changes with message: ${{ env.COMMIT_MESSAGE }}"
+            echo "committed_changes=false" >> $GITHUB_OUTPUT
+            git status
+            git diff
+          else
+            git config --local user.email "github-actions[bot]@users.noreply.github.com"
+            git config --local user.name "github-actions[bot]"
+            git add -A
+            git commit -m "${{ env.COMMIT_MESSAGE }}"
+            echo "committed_changes=true" >> $GITHUB_OUTPUT
+          fi
         fi
 
     - name: Log Push / PR Details
       run: |
+        echo "Dry Run: ${{ inputs.dry_run }}"
+        echo "Has Changes: ${{ steps.commit_changes.outputs.has_changes }}"
         echo "Changes committed: ${{ steps.commit_changes.outputs.committed_changes }}"
         echo "Create Pull Request: ${{ inputs.create_pull_request }}"
         echo "Preview Mode: ${{ inputs.preview }}"
+        echo "Preview Mode Type: ${{ inputs.preview_mode }}"
 
     # Promotion push / PR
     - name: Push Environment Changes
-      if: inputs.create_pull_request == false && steps.commit_changes.outputs.committed_changes == 'true'
+      if: inputs.dry_run == false && inputs.create_pull_request == false && steps.commit_changes.outputs.committed_changes == 'true'
       uses: ad-m/github-push-action@master
       with:
         directory: environment
         github_token: ${{ secrets.GH_PAT }}
         repository: ${{ inputs.environment_repository }}
 
+    - name: "[Dry Run] Push Environment Changes"
+      if: inputs.dry_run && inputs.create_pull_request == false && steps.commit_changes.outputs.has_changes == 'true'
+      run: |
+        echo "[DRY RUN] Would push changes to ${{ inputs.environment_repository }}"
+
     # handles push with PR creation
     - name: "[PR] Create Promotion Pull Request"
+<<<<<<< Updated upstream
       if: inputs.create_pull_request && inputs.preview == false && steps.commit_changes.outputs.committed_changes == 'true'
       uses: peter-evans/create-pull-request@v8
+=======
+      if: inputs.dry_run == false && inputs.create_pull_request && inputs.preview == false && steps.commit_changes.outputs.committed_changes == 'true'
+      uses: peter-evans/create-pull-request@v7
+>>>>>>> Stashed changes
       env:
         PR_TITLE: ${{ env.PR_TITLE }}
         PR_BODY: ${{ env.PR_BODY }}
@@ -371,9 +454,21 @@ jobs:
         title: ${{ env.PR_TITLE }}
         body: ${{ env.PR_BODY }}
 
+    - name: "[Dry Run][PR] Create Promotion Pull Request"
+      if: inputs.dry_run && inputs.create_pull_request && inputs.preview == false && steps.commit_changes.outputs.has_changes == 'true'
+      env:
+        PR_TITLE: ${{ env.PR_TITLE }}
+        PR_BODY: ${{ env.PR_BODY }}
+        PR_BRANCH: ${{ env.PR_BRANCH }}
+      run: |
+        echo "[DRY RUN] Would create PR in ${{ inputs.environment_repository }}"
+        echo "  Title: ${{ env.PR_TITLE }}"
+        echo "  Branch: ${{ env.PR_BRANCH }}"
+        echo "  Body: ${{ env.PR_BODY }}"
+
     # Preview push / PR
-    - name: "[Preview][PR] Push Environment Changes"
-      if: inputs.create_pull_request && inputs.preview && steps.commit_changes.outputs.committed_changes == 'true'
+    - name: "[Preview] Push Environment Changes"
+      if: inputs.dry_run == false && inputs.create_pull_request && inputs.preview && steps.commit_changes.outputs.committed_changes == 'true'
       uses: ad-m/github-push-action@master
       env:
         PR_BRANCH: ${{ env.PR_BRANCH }}
@@ -383,8 +478,15 @@ jobs:
         repository: ${{ inputs.environment_repository }}
         branch: ${{ env.PR_BRANCH }}
 
-    - name: "[Preview][PR] Create Preview Pull Request"
-      if: inputs.create_pull_request && inputs.preview && steps.commit_changes.outputs.committed_changes == 'true'
+    - name: "[Dry Run][Preview] Push Environment Changes"
+      if: inputs.dry_run && inputs.create_pull_request && inputs.preview && steps.commit_changes.outputs.has_changes == 'true'
+      env:
+        PR_BRANCH: ${{ env.PR_BRANCH }}
+      run: |
+        echo "[DRY RUN] Would push changes to ${{ inputs.environment_repository }} branch ${{ env.PR_BRANCH }}"
+
+    - name: "[Preview] Create Preview Pull Request"
+      if: inputs.dry_run == false && inputs.create_pull_request && inputs.preview && steps.commit_changes.outputs.committed_changes == 'true'
       env:
         GH_TOKEN: ${{ secrets.GH_PAT }}
         PR_TITLE: ${{ env.PR_TITLE }}
@@ -401,8 +503,20 @@ jobs:
           gh pr create --repo ${{ inputs.environment_repository }} --title "${{ env.PR_TITLE }}" --body "${{ env.PR_BODY }}" --base main --head ${{ env.PR_BRANCH }}
         fi
 
-    - name: "[Preview] Find Comment"
-      if: inputs.preview
+    - name: "[Dry Run][Preview] Create Preview Pull Request"
+      if: inputs.dry_run && inputs.create_pull_request && inputs.preview && steps.commit_changes.outputs.has_changes == 'true'
+      env:
+        PR_TITLE: ${{ env.PR_TITLE }}
+        PR_BODY: ${{ env.PR_BODY }}
+        PR_BRANCH: ${{ env.PR_BRANCH }}
+      run: |
+        echo "[DRY RUN] Would create PR in ${{ inputs.environment_repository }}"
+        echo "  Title: ${{ env.PR_TITLE }}"
+        echo "  Branch: ${{ env.PR_BRANCH }}"
+        echo "  Body: ${{ env.PR_BODY }}"
+
+    - name: "[Preview][PR] Find Comment"
+      if: inputs.preview && inputs.preview_mode == 'pr'
       uses: peter-evans/find-comment@v4
       id: fc
       with:
@@ -410,12 +524,41 @@ jobs:
         comment-author: 'github-actions[bot]'
         body-includes: ${{ inputs.comment_body_includes_text }}
 
-    - name: "[Preview] Create or Update Comment"
-      if: inputs.preview
+    - name: "[Preview][PR] Create or Update Comment"
+      if: inputs.dry_run == false && inputs.preview && inputs.preview_mode == 'pr'
       uses: peter-evans/create-or-update-comment@v5
       with:
         comment-id: ${{ steps.fc.outputs.comment-id }}
         issue-number: ${{ github.event.pull_request.number }}
         body: |
           ${{ inputs.comment }}
+        edit-mode: replace
+
+    - name: "[Dry Run][Preview][PR] Create or Update Comment"
+      if: inputs.dry_run && inputs.preview && inputs.preview_mode == 'pr'
+      uses: peter-evans/create-or-update-comment@v5
+      env:
+        NAME: ${{ env.NAME }}
+        ARGO_NAME: ${{ env.ARGO_NAME }}
+        DESTINATION_YAML: ${{ env.DESTINATION_YAML }}
+      with:
+        comment-id: ${{ steps.fc.outputs.comment-id }}
+        issue-number: ${{ github.event.pull_request.number }}
+        body: |
+          <!-- argocd-promote-helm-preview -->
+          ## Dry Run Summary
+
+          Workflow validation completed successfully.
+
+          ### Completed
+          - Helm template generated for `${{ env.ARGO_NAME }}`
+          - Output file: `${{ env.DESTINATION_YAML }}`
+          - Changes detected: ${{ steps.commit_changes.outputs.has_changes == 'true' && 'Yes' || 'No' }}
+
+          ### Skipped (dry run)
+          - Commit to environment repository
+          - Push to `${{ inputs.environment_repository }}`
+          - PR creation in environment repository
+
+          > This was a dry run. No changes were made to the environment repository.
         edit-mode: replace
