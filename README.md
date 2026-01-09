@@ -31,12 +31,10 @@ Key features:
 | `project` | string | true | - | ArgoCD project name |
 | `environment_name` | string | true | - | Environment name for GitHub environment protection |
 | `environment_repository` | string | true | - | GitOps repository for the environment |
-| `create_pull_request` | boolean | false | - | Whether to create a PR instead of direct push |
+| `promotion_pr` | boolean | false | false | If true, creates a PR in the environment repository instead of pushing directly |
 | `values` | string | false | "" | Additional Helm values as YAML string |
-| `preview` | boolean | false | false | Enable preview mode for PR environments |
-| `preview_mode` | string | false | `pr` | Preview mode: `pr` for pull request previews, `push` for branch previews |
+| `preview` | boolean | false | false | Enable preview mode. Mode is auto-detected: PR events use PR-style previews, push events use branch-style previews |
 | `comment` | string | false | Default preview comment | Comment body for preview PRs |
-| `comment_body_includes_text` | string | false | "argocd-promote-helm-preview" | Text to find existing comments for replacement |
 | `dry_run` | boolean | false | false | If true, skip commit and push steps (useful for testing) |
 
 ## Secrets
@@ -94,13 +92,13 @@ jobs:
       environment_repository: your-org/your-env
       destination_path: .gitops/deploy
       project: your-env
-      create_pull_request: false
+      promotion_pr: false
       name: your-app
 ```
 
-### Preview Workflow - PR Mode (On Pull Requests)
+### Preview Workflow (On Pull Requests)
 
-Use this workflow to create preview environments for pull requests. The workflow will comment on the PR with the preview status.
+Use this workflow to create preview environments for pull requests. The workflow will comment on the PR with the preview status. Preview mode is auto-detected based on the event type.
 
 ```yaml
 name: on-pr
@@ -151,20 +149,18 @@ jobs:
       environment_name: your-previews-env
       project: your-previews-env
       preview: true
-      preview_mode: pr
-      create_pull_request: true
+      promotion_pr: true
       comment: |
-        <!-- argocd-promote-helm-preview -->
-        Your preview environment has been deployed! :rocket:
+        Your preview environment has been deployed!
 
         Access it at: https://your-app.${{ github.event.repository.name }}-pr-${{ github.event.pull_request.number }}.your-domain.com
 
         The current tag is: `pr-${{ github.event.pull_request.number }}-${{ github.event.pull_request.head.sha }}`
 ```
 
-### Preview Workflow - Push Mode (On Branch Push)
+### Preview Workflow (On Branch Push)
 
-Use this workflow to create preview environments when pushing to feature branches. This is useful when you want previews without requiring a pull request. Note that PR comments are not available in push mode.
+Use this workflow to create preview environments when pushing to feature branches. This is useful when you want previews without requiring a pull request. Note that PR comments are not available for push events.
 
 ```yaml
 name: on-push
@@ -206,22 +202,19 @@ jobs:
       environment_name: your-previews-env
       project: your-previews-env
       preview: true
-      preview_mode: push
-      create_pull_request: true
+      promotion_pr: true
 ```
 
-**Key differences between PR and Push modes:**
+**Auto-detected preview modes:**
 
-| Feature | PR Mode (`preview_mode: pr`) | Push Mode (`preview_mode: push`) |
-|---------|------------------------------|----------------------------------|
-| Trigger | Pull request events | Push to branch |
-| Naming | `{repo}-pr-{number}` | `{repo}-{sanitized-branch}` |
-| PR Comments | Yes | No |
-| Image Tag | `pr-{number}-{sha}` | `{sanitized-branch}-{sha}` |
+| Event Type | Naming | PR Comments | Image Tag |
+|------------|--------|-------------|-----------|
+| Pull Request | `{repo}-pr-{number}` | Yes | `pr-{number}-{sha}` |
+| Push | `{repo}-{sanitized-branch}` | No | `{sanitized-branch}-{sha}` |
 
 ### Dry Run Mode
 
-Use `dry_run: true` to test the workflow without making any changes. In PR mode, a summary comment will be posted showing what would have happened.
+Use `dry_run: true` to test the workflow without making any changes. When triggered from a pull request, a summary comment will be posted showing what would have happened.
 
 ```yaml
   test-workflow:
@@ -233,8 +226,7 @@ Use `dry_run: true` to test the workflow without making any changes. In PR mode,
       environment_name: test
       environment_repository: ${{ github.repository }}
       preview: true
-      preview_mode: pr
-      create_pull_request: true
+      promotion_pr: true
       dry_run: true
 ```
 
@@ -245,4 +237,4 @@ Use `dry_run: true` to test the workflow without making any changes. In PR mode,
 - **Image Tag Handling**: In preview modes, the workflow automatically sets a sanitized `image.tag` value. Do not pass `image.tag` in the `values` input for preview modes as it will be overridden. The workflow sanitizes branch names to produce valid Docker tags (lowercase, no slashes, max 63 chars).
 - For preview environments, the workflow automatically generates unique namespaces and application names based on the PR number.
 - The workflow merges existing Helm values with new ones to preserve environment-specific configurations.
-- When `create_pull_request` is true, changes are committed to a branch and a PR is created for review before merging.
+- When `promotion_pr` is true, changes are committed to a branch and a PR is created for review before merging.

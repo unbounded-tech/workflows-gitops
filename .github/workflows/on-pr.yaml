@@ -29,7 +29,7 @@ jobs:
       environment_name: production
       environment_repository: ${{ github.repository }}
       preview: false
-      create_pull_request: true
+      promotion_pr: true
       dry_run: true
       values: |
         image:
@@ -38,28 +38,26 @@ jobs:
       GH_PAT: ${{ secrets.GITHUB_TOKEN }}
 
   test-argocd-promote-helm--preview:
-    name: Test Preview PR Mode (Dry Run)
+    name: Test Preview (Dry Run)
     uses: ./.github/workflows/argocd-promote-helm.yaml
     with:
       project: test-project
       environment_name: test
       environment_repository: ${{ github.repository }}
       preview: true
-      preview_mode: pr
       dry_run: true
     secrets:
       GH_PAT: ${{ secrets.GITHUB_TOKEN }}
 
   test-argocd-promote-helm--preview-pr:
-    name: Test Preview PR Mode with PR (Dry Run)
+    name: Test Preview with PR (Dry Run)
     uses: ./.github/workflows/argocd-promote-helm.yaml
     with:
       project: test-project
       environment_name: test
       environment_repository: ${{ github.repository }}
       preview: true
-      preview_mode: pr
-      create_pull_request: true
+      promotion_pr: true
       dry_run: true
     secrets:
       GH_PAT: ${{ secrets.GITHUB_TOKEN }}
