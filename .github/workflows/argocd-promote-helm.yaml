@@ -543,8 +543,8 @@ jobs:
         echo "  Branch: ${{ env.PR_BRANCH }}"
         echo "  Body: ${{ env.PR_BODY }}"
 
-    - name: "[Preview][PR] Set Comment Identifier"
-      if: inputs.preview && inputs.preview_mode == 'pr'
+    - name: "[PR] Set Comment Identifier"
+      if: github.event_name == 'pull_request' && (inputs.dry_run || (inputs.preview && inputs.preview_mode == 'pr'))
       id: comment_id
       run: |
         if [ -n "${{ inputs.comment_identifier }}" ]; then
@@ -555,8 +555,8 @@ jobs:
         fi
         echo "identifier=${IDENTIFIER}" >> $GITHUB_OUTPUT
 
-    - name: "[Preview][PR] Find Comment"
-      if: inputs.preview && inputs.preview_mode == 'pr'
+    - name: "[PR] Find Comment"
+      if: github.event_name == 'pull_request' && (inputs.dry_run || (inputs.preview && inputs.preview_mode == 'pr'))
       uses: peter-evans/find-comment@v4
       id: fc
       with:
@@ -575,8 +575,8 @@ jobs:
           ${{ inputs.comment || 'Your preview environment has been published! :rocket:' }}
         edit-mode: replace
 
-    - name: "[Dry Run][Preview][PR] Create or Update Comment"
-      if: inputs.dry_run && inputs.preview && inputs.preview_mode == 'pr'
+    - name: "[Dry Run][PR] Create or Update Comment"
+      if: inputs.dry_run && github.event_name == 'pull_request'
       uses: peter-evans/create-or-update-comment@v5
       env:
         NAME: ${{ env.NAME }}
