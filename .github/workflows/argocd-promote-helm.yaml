@@ -453,11 +453,13 @@ jobs:
     # Promotion push / PR
     - name: Push Environment Changes
       if: inputs.dry_run == false && inputs.create_pull_request == false && steps.commit_changes.outputs.committed_changes == 'true'
-      uses: ad-m/github-push-action@master
-      with:
-        directory: environment
-        github_token: ${{ secrets.GH_PAT }}
-        repository: ${{ inputs.environment_repository }}
+      env:
+        GH_TOKEN: ${{ secrets.GH_PAT }}
+      run: |
+        cd environment
+        # Detect default branch from remote
+        DEFAULT_BRANCH=$(git symbolic-ref refs/remotes/origin/HEAD | sed 's@^refs/remotes/origin/@@')
+        git push https://x-access-token:${{ secrets.GH_PAT }}@github.com/${{ inputs.environment_repository }}.git HEAD:refs/heads/${DEFAULT_BRANCH}
 
     - name: "[Dry Run] Push Environment Changes"
       if: inputs.dry_run && inputs.create_pull_request == false && steps.commit_changes.outputs.has_changes == 'true'
@@ -494,14 +496,12 @@ jobs:
     # Preview push / PR
     - name: "[Preview] Push Environment Changes"
       if: inputs.dry_run == false && inputs.create_pull_request && inputs.preview && steps.commit_changes.outputs.committed_changes == 'true'
-      uses: ad-m/github-push-action@master
       env:
+        GH_TOKEN: ${{ secrets.GH_PAT }}
         PR_BRANCH: ${{ env.PR_BRANCH }}
-      with:
-        directory: environment
-        github_token: ${{ secrets.GH_PAT }}
-        repository: ${{ inputs.environment_repository }}
-        branch: ${{ env.PR_BRANCH }}
+      run: |
+        cd environment
+        git push https://x-access-token:${{ secrets.GH_PAT }}@github.com/${{ inputs.environment_repository }}.git HEAD:refs/heads/${{ env.PR_BRANCH }}
 
     - name: "[Dry Run][Preview] Push Environment Changes"
       if: inputs.dry_run && inputs.create_pull_request && inputs.preview && steps.commit_changes.outputs.has_changes == 'true'
@@ -519,13 +519,15 @@ jobs:
         PR_BRANCH: ${{ env.PR_BRANCH }}
       run: |
         cd environment
+        # Detect default branch from remote
+        DEFAULT_BRANCH=$(git symbolic-ref refs/remotes/origin/HEAD | sed 's@^refs/remotes/origin/@@')
         # Check if PR already exists
         EXISTING_PR=$(gh pr list --head ${{ env.PR_BRANCH }} --repo ${{ inputs.environment_repository }} --json number --jq '.[0].number' || echo "")
         if [ -n "$EXISTING_PR" ]; then
           echo "PR already exists with head branch ${{ env.PR_BRANCH }} (PR #$EXISTING_PR), skipping creation"
         else
-          echo "Creating new PR with head branch ${{ env.PR_BRANCH }}"
-          gh pr create --repo ${{ inputs.environment_repository }} --title "${{ env.PR_TITLE }}" --body "${{ env.PR_BODY }}" --base main --head ${{ env.PR_BRANCH }}
+          echo "Creating new PR with head branch ${{ env.PR_BRANCH }} targeting ${DEFAULT_BRANCH}"
+          gh pr create --repo ${{ inputs.environment_repository }} --title "${{ env.PR_TITLE }}" --body "${{ env.PR_BODY }}" --base ${DEFAULT_BRANCH} --head ${{ env.PR_BRANCH }}
         fi
 
     - name: "[Dry Run][Preview] Create Preview Pull Request"
