@@ -18,8 +18,5 @@ jobs:
       preview_mode: push
       create_pull_request: true
       dry_run: true
-      values: |
-        image:
-          tag: ${{ github.ref_name }}-${{ github.sha }}
     secrets:
       GH_PAT: ${{ secrets.GITHUB_TOKEN }}

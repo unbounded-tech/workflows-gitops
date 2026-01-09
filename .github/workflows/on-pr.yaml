@@ -14,11 +14,7 @@ jobs:
       environment_name: test
       environment_repository: ${{ github.repository }}
       preview: true
-      preview_mode: pr
       create_pull_request: true
       dry_run: true
-      values: |
-        image:
-          tag: pr-${{ github.event.pull_request.number }}
     secrets:
       GH_PAT: ${{ secrets.GITHUB_TOKEN }}
