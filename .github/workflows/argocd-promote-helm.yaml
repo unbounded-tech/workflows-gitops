@@ -52,14 +52,14 @@ on:
       comment:
         required: false
         type: string
-        default: |
-          <!-- argocd-promote-helm-preview -->
-          Your preview environment has been published! :rocket:
+        default: ""
+        description: "Comment body for preview PRs. Leave empty to use default."
 
-      comment_body_includes_text:
+      comment_identifier:
         required: false
         type: string
-        default: "argocd-promote-helm-preview"
+        default: ""
+        description: "Unique identifier for PR comments. Leave empty to auto-generate based on project/config."
 
       dry_run:
         required: false
@@ -543,6 +543,18 @@ jobs:
         echo "  Branch: ${{ env.PR_BRANCH }}"
         echo "  Body: ${{ env.PR_BODY }}"
 
+    - name: "[Preview][PR] Set Comment Identifier"
+      if: inputs.preview && inputs.preview_mode == 'pr'
+      id: comment_id
+      run: |
+        if [ -n "${{ inputs.comment_identifier }}" ]; then
+          IDENTIFIER="${{ inputs.comment_identifier }}"
+        else
+          # Auto-generate unique identifier based on project and config
+          IDENTIFIER="argocd-promote-helm-${{ inputs.project }}-${{ inputs.preview && 'preview' || 'promotion' }}-${{ inputs.create_pull_request && 'pr' || 'direct' }}"
+        fi
+        echo "identifier=${IDENTIFIER}" >> $GITHUB_OUTPUT
+
     - name: "[Preview][PR] Find Comment"
       if: inputs.preview && inputs.preview_mode == 'pr'
       uses: peter-evans/find-comment@v4
@@ -550,7 +562,7 @@ jobs:
       with:
         issue-number: ${{ github.event.pull_request.number }}
         comment-author: 'github-actions[bot]'
-        body-includes: ${{ inputs.comment_body_includes_text }}
+        body-includes: ${{ steps.comment_id.outputs.identifier }}
 
     - name: "[Preview][PR] Create or Update Comment"
       if: inputs.dry_run == false && inputs.preview && inputs.preview_mode == 'pr'
@@ -559,7 +571,8 @@ jobs:
         comment-id: ${{ steps.fc.outputs.comment-id }}
         issue-number: ${{ github.event.pull_request.number }}
         body: |
-          ${{ inputs.comment }}
+          <!-- ${{ steps.comment_id.outputs.identifier }} -->
+          ${{ inputs.comment || 'Your preview environment has been published! :rocket:' }}
         edit-mode: replace
 
     - name: "[Dry Run][Preview][PR] Create or Update Comment"
@@ -573,8 +586,8 @@ jobs:
         comment-id: ${{ steps.fc.outputs.comment-id }}
         issue-number: ${{ github.event.pull_request.number }}
         body: |
-          <!-- argocd-promote-helm-preview -->
-          ## Dry Run Summary
+          <!-- ${{ steps.comment_id.outputs.identifier }} -->
+          ## Dry Run Summary: `${{ github.job }}`
 
           Workflow validation completed successfully.
 
