@@ -290,13 +290,15 @@ jobs:
         NAME: ${{ env.NAME }}
         DESTINATION_YAML: ${{ env.DESTINATION_YAML }}
       run: |
+        # Sanitize branch name for Docker tag (replace non-alphanumeric with -)
+        SANITIZED_REF=$(echo "${{ github.ref_name }}" | sed 's/[^a-zA-Z0-9]/-/g' | sed 's/--*/-/g' | sed 's/^-//' | sed 's/-$//')
         mkdir -p environment/${{ inputs.destination_path }}
         helm template ${{ inputs.promotion_chart_path }} \
           --set application.name=${{ env.NAME }} \
           --set application.targetRevision=${{ github.ref_name }} \
           --set application.repository=https://github.com/${{ github.repository }}.git \
           --set application.destination.namespace=${{ env.NAME }} \
-          --set application.image.tag=${{ github.ref_name }}-${{ github.sha }} \
+          --set application.image.tag=${SANITIZED_REF}-${{ github.sha }} \
           --set project=${{ inputs.project }} \
           --set preview=true \
           --set-literal application.values="${{ inputs.values }}" \
