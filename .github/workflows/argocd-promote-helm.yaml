@@ -69,7 +69,7 @@ on:
 
 jobs:
 
-  gitops-promote-helm:
+  argocd-promote-helm:
     runs-on: ubuntu-latest
     environment:
       name: ${{ inputs.environment_name }}
@@ -595,7 +595,7 @@ jobs:
         issue-number: ${{ github.event.pull_request.number }}
         body: |
           <!-- ${{ steps.comment_id.outputs.identifier }} -->
-          ## Dry Run Summary: `${{ github.job }}`
+          ## Dry Run: ${{ inputs.preview && 'Preview' || 'Release' }} (${{ steps.config.outputs.promotion_pr == 'true' && 'Promotion PR' || 'Promotion' }})
 
           Workflow validation completed successfully.
 
@@ -606,8 +606,8 @@ jobs:
           | Project | `${{ inputs.project }}` |
           | Application Name | `${{ env.ARGO_NAME }}` |
           | Output File | `${{ env.DESTINATION_YAML }}` |
-          | Preview | `${{ inputs.preview }}` |
-          | Promotion PR | `${{ steps.config.outputs.promotion_pr }}` |
+          | Type | ${{ inputs.preview && 'Preview' || 'Release' }} |
+          | Method | ${{ steps.config.outputs.promotion_pr == 'true' && 'Promotion PR' || 'Promotion' }} |
 
           ### Completed
           - Helm template generated for `${{ env.ARGO_NAME }}`
@@ -615,8 +615,7 @@ jobs:
 
           ### Skipped (dry run)
           - Commit to environment repository
-          - Push to `${{ inputs.environment_repository }}`
-          - PR creation in environment repository
+          - ${{ steps.config.outputs.promotion_pr == 'true' && 'Create PR in' || 'Push to' }} `${{ inputs.environment_repository }}`
 
           <details>
           <summary>Environment Diff</summary>
