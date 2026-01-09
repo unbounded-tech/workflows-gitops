@@ -420,10 +420,11 @@ jobs:
             echo 'EOF'
           } >> $GITHUB_OUTPUT
 
-          # Capture output file content
+          # Capture output file content (strip environment/ prefix since we've cd'd into it)
+          OUTPUT_FILE_PATH=$(echo "${{ env.DESTINATION_YAML }}" | sed 's@^environment/@@')
           {
             echo 'output_file<<EOF'
-            cat "${{ env.DESTINATION_YAML }}" 2>/dev/null || echo "File not found"
+            cat "${OUTPUT_FILE_PATH}" 2>/dev/null || echo "File not found"
             echo 'EOF'
           } >> $GITHUB_OUTPUT
 
