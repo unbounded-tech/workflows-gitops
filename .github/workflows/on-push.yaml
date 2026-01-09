@@ -8,7 +8,51 @@ on:
 
 jobs:
   test-argocd-promote-helm:
-    name: Test Preview (Push Mode)
+    name: Test Promotion (Dry Run)
+    uses: ./.github/workflows/argocd-promote-helm.yaml
+    with:
+      project: test-project
+      environment_name: production
+      environment_repository: ${{ github.repository }}
+      preview: false
+      dry_run: true
+      values: |
+        image:
+          tag: ${{ github.sha }}
+    secrets:
+      GH_PAT: ${{ secrets.GITHUB_TOKEN }}
+
+  test-argocd-promote-helm--promotion-pr:
+    name: Test Promotion with PR (Dry Run)
+    uses: ./.github/workflows/argocd-promote-helm.yaml
+    with:
+      project: test-project
+      environment_name: production
+      environment_repository: ${{ github.repository }}
+      preview: false
+      create_pull_request: true
+      dry_run: true
+      values: |
+        image:
+          tag: ${{ github.sha }}
+    secrets:
+      GH_PAT: ${{ secrets.GITHUB_TOKEN }}
+
+  test-argocd-promote-helm--preview:
+    name: Test Preview Push Mode (Dry Run)
+    uses: ./.github/workflows/argocd-promote-helm.yaml
+    with:
+      project: test-project
+      environment_name: test
+      environment_repository: ${{ github.repository }}
+      preview: true
+      preview_mode: push
+      dry_run: true
+    secrets:
+      GH_PAT: ${{ secrets.GITHUB_TOKEN }}
+
+  test-argocd-promote-helm--preview-pr:
+    name: Test Preview Push Mode with PR (Dry Run)
     uses: ./.github/workflows/argocd-promote-helm.yaml
     with:
       project: test-project
