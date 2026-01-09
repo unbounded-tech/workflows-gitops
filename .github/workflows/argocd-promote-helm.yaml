@@ -386,6 +386,7 @@ jobs:
       id: commit_changes
       env:
         COMMIT_MESSAGE: ${{ env.COMMIT_MESSAGE }}
+        DESTINATION_YAML: ${{ env.DESTINATION_YAML }}
       run: |
         cd environment
 
@@ -397,10 +398,20 @@ jobs:
           # Uncommitted changes
           echo "has_changes=true" >> $GITHUB_OUTPUT
 
-          # Capture diff for dry run reporting
+          # Stage files to show diff for new files (intent to add)
+          git add -N .
+
+          # Capture diff for dry run reporting (includes new files now)
           {
             echo 'diff<<EOF'
             git diff --no-color | head -200
+            echo 'EOF'
+          } >> $GITHUB_OUTPUT
+
+          # Capture output file content
+          {
+            echo 'output_file<<EOF'
+            cat "${{ env.DESTINATION_YAML }}" 2>/dev/null || echo "File not found"
             echo 'EOF'
           } >> $GITHUB_OUTPUT
 
@@ -576,6 +587,15 @@ jobs:
 
           ```diff
           ${{ steps.commit_changes.outputs.diff }}
+          ```
+
+          </details>
+
+          <details>
+          <summary>Generated Output File</summary>
+
+          ```yaml
+          ${{ steps.commit_changes.outputs.output_file }}
           ```
 
           </details>
