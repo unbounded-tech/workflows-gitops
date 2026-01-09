@@ -31,11 +31,11 @@ Key features:
 | `project` | string | true | - | ArgoCD project name |
 | `environment_name` | string | true | - | Environment name for GitHub environment protection |
 | `environment_repository` | string | true | - | GitOps repository for the environment |
-| `create_pull_request` | boolean | false | - | Whether to create a PR instead of direct push |
+| `promotion_pr` | boolean | false | false | If true, creates a PR in the environment repository instead of pushing directly |
 | `values` | string | false | "" | Additional Helm values as YAML string |
-| `preview` | boolean | false | false | Enable preview mode for PR environments |
+| `preview` | boolean | false | false | Enable preview mode. Mode is auto-detected: PR events use PR-style previews, push events use branch-style previews |
 | `comment` | string | false | Default preview comment | Comment body for preview PRs |
-| `comment_body_includes_text` | string | false | "Your preview environment" | Text to find existing comments for replacement |
+| `dry_run` | boolean | false | false | If true, skip commit and push steps (useful for testing) |
 
 ## Secrets
 
@@ -92,13 +92,13 @@ jobs:
       environment_repository: your-org/your-env
       destination_path: .gitops/deploy
       project: your-env
-      create_pull_request: false
+      promotion_pr: false
       name: your-app
 ```
 
 ### Preview Workflow (On Pull Requests)
 
-Use this workflow to create preview environments for pull requests, and comment with results.
+Use this workflow to create preview environments for pull requests. The workflow will comment on the PR with the preview status. Preview mode is auto-detected based on the event type.
 
 ```yaml
 name: on-pr
@@ -106,7 +106,7 @@ name: on-pr
 on:
   pull_request:
     branches:
-      - "**"
+      - main
     types:
       - labeled
       - opened
@@ -118,8 +118,8 @@ jobs:
     uses: unbounded-tech/workflows-containers/.github/workflows/publish.yaml@v1.1.1
     permissions:
       packages: write
-      contents: read  # Required for actions/checkout
-      pull-requests: write # For commenting on PRs
+      contents: read
+      pull-requests: write
     with:
       dockerfiles: |
         [
@@ -134,7 +134,7 @@ jobs:
     needs:
       - publish-containers
     if: contains(github.event.pull_request.labels.*.name, 'preview')
-    uses: unbounded-tech/workflows-gitops/.github/workflows/argocd-promote-helm.yaml@v1.0.0
+    uses: unbounded-tech/workflows-gitops/.github/workflows/argocd-promote-helm.yaml@v1
     secrets:
       GH_PAT: ${{ secrets.GH_ORG_ACTIONS_REPO_WRITE_PACKAGES }}
     permissions:
@@ -149,42 +149,92 @@ jobs:
       environment_name: your-previews-env
       project: your-previews-env
       preview: true
+      promotion_pr: true
       comment: |
-        Your preview environment has been committed and pushed to the [gitops repo](https://github.com/your-org/your-previews-env)! :rocket:
-
-        ArgoCD will sync from there and deploy it to the cluster! You can see the status of the deployment in the [ArgoCD UI](https://argocd.your-domain.com).
-
-        The following ArgoCD Applications have been created/modified for this PR:
-          * [your-previews-env](https://argocd.your-domain.com/applications/your-previews-env) (Click refresh here to sync now)
-          * [your-previews-env-${{ github.event.repository.name }}-pr-${{ github.event.pull_request.number }}-environment](https://argocd.your-domain.com/applications/your-previews-env-${{ github.event.repository.name }}-pr-${{ github.event.pull_request.number }}-environment)
-          * [your-previews-env-${{ github.event.repository.name }}-pr-${{ github.event.pull_request.number }}](https://argocd.your-domain.com/applications/your-previews-env-${{ github.event.repository.name }}-pr-${{ github.event.pull_request.number }})
-
-        You can also check the status of the ArgoCD Applications with the following command:
-
-        ```bash
-        kubectl get applications -n argocd
-        ```
-
-        Once your application has synced, it may take a few minutes to spin up, create certificates, configure DNS, etc...
-
-        As well as viewing the resource progression in the ArgoCD UI, you can also check its status with `kubectl`:
-
-        ```bash
-        kubectl get all,virtualservices.networking.istio.io,authorizationpolicies.security.istio.io,externalsecrets.external-secrets.io -n ${{ github.event.repository.name }}-pr-${{ github.event.pull_request.number }}
-        kubectl get gateways.networking.istio.io,certificates.cert-manager.io -n istio-system | grep ${{ github.event.repository.name }}-pr-${{ github.event.pull_request.number }}
-        ```
+        Your preview environment has been deployed!
 
         Access it at: https://your-app.${{ github.event.repository.name }}-pr-${{ github.event.pull_request.number }}.your-domain.com
 
-        > WARNING: Give the environment a few minutes to spin up before accessing it. If you attempt to access it before DNS is ready, you can cache the invalid DNS response in your router or browser, which is annoying.
-
         The current tag is: `pr-${{ github.event.pull_request.number }}-${{ github.event.pull_request.head.sha }}`
+```
+
+### Preview Workflow (On Branch Push)
+
+Use this workflow to create preview environments when pushing to feature branches. This is useful when you want previews without requiring a pull request. Note that PR comments are not available for push events.
+
+```yaml
+name: on-push
+
+on:
+  push:
+    branches:
+      - '**'
+      - '!main'
+
+jobs:
+  publish-containers:
+    uses: unbounded-tech/workflows-containers/.github/workflows/publish.yaml@v1.1.1
+    permissions:
+      packages: write
+      contents: read
+    with:
+      dockerfiles: |
+        [
+          {
+            "prefix": "",
+            "dockerfile": "./Dockerfile",
+            "postfix": ""
+          }
+        ]
+
+  preview:
+    needs:
+      - publish-containers
+    uses: unbounded-tech/workflows-gitops/.github/workflows/argocd-promote-helm.yaml@v1
+    secrets:
+      GH_PAT: ${{ secrets.GH_ORG_ACTIONS_REPO_WRITE_PACKAGES }}
+    permissions:
+      packages: write
+      contents: write
+    with:
+      promotion_chart_path: .gitops/preview/helm
+      environment_repository: your-org/your-previews-env
+      environment_name: your-previews-env
+      project: your-previews-env
+      preview: true
+      promotion_pr: true
+```
+
+**Auto-detected preview modes:**
+
+| Event Type | Naming | PR Comments | Image Tag |
+|------------|--------|-------------|-----------|
+| Pull Request | `{repo}-pr-{number}` | Yes | `pr-{number}-{sha}` |
+| Push | `{repo}-{sanitized-branch}` | No | `{sanitized-branch}-{sha}` |
+
+### Dry Run Mode
+
+Use `dry_run: true` to test the workflow without making any changes. When triggered from a pull request, a summary comment will be posted showing what would have happened.
+
+```yaml
+  test-workflow:
+    uses: unbounded-tech/workflows-gitops/.github/workflows/argocd-promote-helm.yaml@v1
+    secrets:
+      GH_PAT: ${{ secrets.GITHUB_TOKEN }}
+    with:
+      project: test-project
+      environment_name: test
+      environment_repository: ${{ github.repository }}
+      preview: true
+      promotion_pr: true
+      dry_run: true
 ```
 
 ## Notes
 
 - Replace `your-org`, `your-env-*`, `your-domain.com`, and other placeholders with your actual values.
 - Ensure your Helm charts are structured correctly and contain the necessary ArgoCD Application templates.
+- **Image Tag Handling**: In preview modes, the workflow automatically sets a sanitized `image.tag` value. Do not pass `image.tag` in the `values` input for preview modes as it will be overridden. The workflow sanitizes branch names to produce valid Docker tags (lowercase, no slashes, max 63 chars).
 - For preview environments, the workflow automatically generates unique namespaces and application names based on the PR number.
 - The workflow merges existing Helm values with new ones to preserve environment-specific configurations.
-- When `create_pull_request` is true, changes are committed to a branch and a PR is created for review before merging.
+- When `promotion_pr` is true, changes are committed to a branch and a PR is created for review before merging.

@@ -37,10 +37,10 @@ jobs:
         git commit -m "feat(${{ github.event.repository.name }}): ${{ github.event.repository.name }}-pr-${{ github.event.pull_request.number }}"
 
     - name: Push Preview Env Changes
-      uses: ad-m/github-push-action@master
-      with:
-        github_token: ${{ secrets.GH_ORG_TOKEN }}
-        repository: ${{ inputs.environment_repository }}
+      run: |
+        # Detect default branch from remote
+        DEFAULT_BRANCH=$(git symbolic-ref refs/remotes/origin/HEAD | sed 's@^refs/remotes/origin/@@')
+        git push https://x-access-token:${{ secrets.GH_ORG_TOKEN }}@github.com/${{ inputs.environment_repository }}.git HEAD:refs/heads/${DEFAULT_BRANCH}
 
     - name: Find Comment
       uses: peter-evans/find-comment@v4

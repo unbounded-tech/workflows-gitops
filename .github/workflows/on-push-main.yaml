@@ -1,0 +1,87 @@
+name: on-push-main
+
+on:
+  push:
+    branches:
+    - main
+
+permissions:
+  packages: write
+  contents: write
+
+jobs:
+
+  test-argocd-promote-helm:
+    name: Test Promotion (Dry Run)
+    uses: ./.github/workflows/argocd-promote-helm.yaml
+    with:
+      project: test-project
+      environment_name: production
+      environment_repository: ${{ github.repository }}
+      preview: false
+      dry_run: true
+      values: |
+        image:
+          tag: ${{ github.sha }}
+    secrets:
+      GH_PAT: ${{ secrets.GITHUB_TOKEN }}
+
+  test-argocd-promote-helm--promotion-pr:
+    name: Test Promotion (Dry Run)
+    uses: ./.github/workflows/argocd-promote-helm.yaml
+    with:
+      project: test-project
+      environment_name: production
+      environment_repository: ${{ github.repository }}
+      preview: false
+      create_pull_request: true
+      dry_run: true
+      values: |
+        image:
+          tag: ${{ github.sha }}
+    secrets:
+      GH_PAT: ${{ secrets.GITHUB_TOKEN }}
+
+  test-argocd-promote-helm--preview:
+    name: Test Promotion (Dry Run)
+    uses: ./.github/workflows/argocd-promote-helm.yaml
+    with:
+      project: test-project
+      environment_name: production
+      environment_repository: ${{ github.repository }}
+      preview: true
+      dry_run: true
+      values: |
+        image:
+          tag: ${{ github.sha }}
+    secrets:
+      GH_PAT: ${{ secrets.GITHUB_TOKEN }}
+
+  test-argocd-promote-helm--preview-promotion-pr:
+    name: Test Promotion (Dry Run)
+    uses: ./.github/workflows/argocd-promote-helm.yaml
+    with:
+      project: test-project
+      environment_name: production
+      environment_repository: ${{ github.repository }}
+      preview: true
+      create_pull_request: true
+      dry_run: true
+      values: |
+        image:
+          tag: ${{ github.sha }}
+    secrets:
+      GH_PAT: ${{ secrets.GITHUB_TOKEN }}
+
+  version-and-tag:
+    name: Version and Tag
+    needs: 
+      - test-argocd-promote-helm
+      - test-argocd-promote-helm--preview
+      - test-argocd-promote-helm--promotion-pr
+      - test-argocd-promote-helm--preview-promotion-pr
+    uses: unbounded-tech/workflow-vnext-tag/.github/workflows/workflow.yaml@v1.20.2
+    secrets:
+      DEPLOY_KEY: ${{ secrets.DEPLOY_KEY }}
+    with:
+      useDeployKey: true
