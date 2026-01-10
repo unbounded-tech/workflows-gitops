@@ -140,11 +140,12 @@ jobs:
             };
           } else {
             // Preview + Push: sanitize for k8s compatibility
-            const sanitizedRepo = sanitize(repoName);
-            const maxBranchLen = 63 - sanitizedRepo.length - 1;
+            // Truncate repo part first to leave room for separator and branch
+            const repoPart = sanitize(repoName).slice(0, 62).replace(/-$/, '');
+            const maxBranchLen = Math.max(0, 63 - repoPart.length - 1);
             const refName = context.ref.replace('refs/heads/', '');
             const sanitizedBranch = sanitize(refName).slice(0, maxBranchLen).replace(/-$/, '');
-            const name = `${sanitizedRepo}-${sanitizedBranch}`;
+            const name = sanitizedBranch ? `${repoPart}-${sanitizedBranch}` : repoPart;
             config = {
               name,
               fileName: name,
@@ -448,8 +449,18 @@ jobs:
         GH_TOKEN: ${{ secrets.GH_PAT }}
       run: |
         cd environment
-        # Detect default branch from remote
-        DEFAULT_BRANCH=$(git symbolic-ref refs/remotes/origin/HEAD | sed 's@^refs/remotes/origin/@@')
+        # Detect default branch from remote with fallback
+        DEFAULT_BRANCH=$(git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's@^refs/remotes/origin/@@')
+        if [ -z "$DEFAULT_BRANCH" ]; then
+          # Fallback: query remote directly
+          DEFAULT_BRANCH=$(git ls-remote --symref origin HEAD 2>/dev/null | grep '^ref:' | sed 's@^ref: refs/heads/@@' | sed 's@\s.*@@')
+        fi
+        if [ -z "$DEFAULT_BRANCH" ]; then
+          # Last resort fallback
+          DEFAULT_BRANCH="main"
+          echo "Warning: Could not detect default branch, falling back to 'main'"
+        fi
+        echo "Pushing to default branch: ${DEFAULT_BRANCH}"
         git push https://x-access-token:${{ secrets.GH_PAT }}@github.com/${{ inputs.environment_repository }}.git HEAD:refs/heads/${DEFAULT_BRANCH}
 
     - name: "[Dry Run][Promotion] Push Environment Changes"
@@ -508,8 +519,17 @@ jobs:
         PR_BRANCH: ${{ env.PR_BRANCH }}
       run: |
         cd environment
-        # Detect default branch from remote
-        DEFAULT_BRANCH=$(git symbolic-ref refs/remotes/origin/HEAD | sed 's@^refs/remotes/origin/@@')
+        # Detect default branch from remote with fallback
+        DEFAULT_BRANCH=$(git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's@^refs/remotes/origin/@@')
+        if [ -z "$DEFAULT_BRANCH" ]; then
+          # Fallback: query remote directly
+          DEFAULT_BRANCH=$(git ls-remote --symref origin HEAD 2>/dev/null | grep '^ref:' | sed 's@^ref: refs/heads/@@' | sed 's@\s.*@@')
+        fi
+        if [ -z "$DEFAULT_BRANCH" ]; then
+          # Last resort fallback
+          DEFAULT_BRANCH="main"
+          echo "Warning: Could not detect default branch, falling back to 'main'"
+        fi
         # Check if PR already exists
         EXISTING_PR=$(gh pr list --head ${{ env.PR_BRANCH }} --repo ${{ inputs.environment_repository }} --json number --jq '.[0].number' || echo "")
         if [ -n "$EXISTING_PR" ]; then
