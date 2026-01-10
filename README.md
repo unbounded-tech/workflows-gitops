@@ -80,10 +80,10 @@ The workflow uses the following concepts:
 
 | Type | Method | Use Case |
 |------|--------|----------|
-| `[Release][Promotion]` | Production releases that auto-sync |
-| `[Release][Promotion PR]` | Production releases requiring approval |
-| `[Preview][Promotion]` | Previews that auto-sync |
-| `[Preview][Promotion PR]` | Previews requiring approval |
+| Release | Promotion | Production releases that auto-sync |
+| Release | Promotion PR | Production releases requiring approval |
+| Preview | Promotion | Previews that auto-sync |
+| Preview | Promotion PR | Previews requiring approval |
 
 ## Prerequisites
 
