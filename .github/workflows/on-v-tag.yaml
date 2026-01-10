@@ -1,4 +1,4 @@
-name: On Tag, Trigger GitHub Release
+name: on-v-tag
 
 on:
   push:
@@ -9,7 +9,7 @@ permissions:
   contents: write
 
 jobs:
-  call-release-workflow:
+  release:
     uses: unbounded-tech/workflow-simple-release/.github/workflows/workflow.yaml@v2.1.1
     with:
       tag: ${{ github.ref_name }}

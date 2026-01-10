@@ -1,0 +1,15 @@
+project: default
+
+application:
+  name: ""
+  repository: ""
+  targetRevision: main
+  path: "."
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: default
+  values: ""
+  image:
+    tag: ""
+
+preview: false
