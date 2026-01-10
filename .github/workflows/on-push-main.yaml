@@ -16,7 +16,7 @@ jobs:
     uses: ./.github/workflows/argocd-promote-helm.yaml
     with:
       project: test-project
-      environment_name: production
+      environment_name: on-push-main-release-promotion
       environment_repository: ${{ github.repository }}
       preview: false
       dry_run: true
@@ -34,7 +34,7 @@ jobs:
     uses: ./.github/workflows/argocd-promote-helm.yaml
     with:
       project: test-project
-      environment_name: production
+      environment_name: on-push-main-release-promotion-pr
       environment_repository: ${{ github.repository }}
       preview: false
       promotion_pr: true
@@ -53,7 +53,7 @@ jobs:
     uses: ./.github/workflows/argocd-promote-helm.yaml
     with:
       project: test-project
-      environment_name: production
+      environment_name: on-push-main-preview-promotion
       environment_repository: ${{ github.repository }}
       preview: true
       dry_run: true
@@ -71,7 +71,7 @@ jobs:
     uses: ./.github/workflows/argocd-promote-helm.yaml
     with:
       project: test-project
-      environment_name: production
+      environment_name: on-push-main-preview-promotion-pr
       environment_repository: ${{ github.repository }}
       preview: true
       promotion_pr: true
