@@ -120,19 +120,24 @@ jobs:
           let config;
 
           if (type === 'release') {
+            const refName = context.ref.replace('refs/heads/', '').replace('refs/tags/', '');
+            const isTag = context.ref.startsWith('refs/tags/');
+            const sourceInfo = isTag
+              ? `https://github.com/${context.repo.owner}/${context.repo.repo}/releases/tag/${refName}`
+              : `https://github.com/${context.repo.owner}/${context.repo.repo}/tree/${refName}`;
             config = {
               name: repoName,
-              fileName: context.repo.repo,
-              targetRevision: context.ref.replace('refs/heads/', '').replace('refs/tags/', ''),
+              fileName: repoName,
+              targetRevision: refName,
               namespace: inputs.project,
               imageTag: '',
-              sourceInfo: `https://github.com/${context.repo.owner}/${context.repo.repo}/releases/tag/${context.ref.replace('refs/heads/', '').replace('refs/tags/', '')}`,
+              sourceInfo,
             };
           } else if (mode === 'pr') {
             const name = `${repoName}-pr-${pr.number}`;
             config = {
               name,
-              fileName: `${context.repo.repo}-pr-${pr.number}`,
+              fileName: `${repoName}-pr-${pr.number}`,
               targetRevision: pr.head.ref,
               namespace: name,
               imageTag: `pr-${pr.number}-${pr.head.sha}`,
@@ -151,8 +156,8 @@ jobs:
               fileName: name,
               targetRevision: refName,
               namespace: name,
-              imageTag: `${sanitizedBranch}-${context.sha}`,
-              sourceInfo: `branch ${refName} (commit ${context.sha})`,
+              imageTag: sanitizedBranch ? `${sanitizedBranch}-${context.sha}` : context.sha,
+              sourceInfo: `https://github.com/${context.repo.owner}/${context.repo.repo}/tree/${refName}`,
             };
           }
 
