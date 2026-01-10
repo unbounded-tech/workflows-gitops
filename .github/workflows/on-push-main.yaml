@@ -11,8 +11,8 @@ permissions:
 
 jobs:
 
-  test-argocd-promote-helm:
-    name: Test Promotion (Dry Run)
+  test-release-promotion:
+    name: "[Dry Run][Release][Promotion]"
     uses: ./.github/workflows/argocd-promote-helm.yaml
     with:
       project: test-project
@@ -26,15 +26,15 @@ jobs:
     secrets:
       GH_PAT: ${{ secrets.GITHUB_TOKEN }}
 
-  test-argocd-promote-helm--promotion-pr:
-    name: Test Promotion (Dry Run)
+  test-release-promotion-pr:
+    name: "[Dry Run][Release][Promotion PR]"
     uses: ./.github/workflows/argocd-promote-helm.yaml
     with:
       project: test-project
       environment_name: production
       environment_repository: ${{ github.repository }}
       preview: false
-      create_pull_request: true
+      promotion_pr: true
       dry_run: true
       values: |
         image:
@@ -42,8 +42,8 @@ jobs:
     secrets:
       GH_PAT: ${{ secrets.GITHUB_TOKEN }}
 
-  test-argocd-promote-helm--preview:
-    name: Test Promotion (Dry Run)
+  test-preview-promotion:
+    name: "[Dry Run][Preview][Promotion]"
     uses: ./.github/workflows/argocd-promote-helm.yaml
     with:
       project: test-project
@@ -57,15 +57,15 @@ jobs:
     secrets:
       GH_PAT: ${{ secrets.GITHUB_TOKEN }}
 
-  test-argocd-promote-helm--preview-promotion-pr:
-    name: Test Promotion (Dry Run)
+  test-preview-promotion-pr:
+    name: "[Dry Run][Preview][Promotion PR]"
     uses: ./.github/workflows/argocd-promote-helm.yaml
     with:
       project: test-project
       environment_name: production
       environment_repository: ${{ github.repository }}
       preview: true
-      create_pull_request: true
+      promotion_pr: true
       dry_run: true
       values: |
         image:
@@ -75,11 +75,11 @@ jobs:
 
   version-and-tag:
     name: Version and Tag
-    needs: 
-      - test-argocd-promote-helm
-      - test-argocd-promote-helm--preview
-      - test-argocd-promote-helm--promotion-pr
-      - test-argocd-promote-helm--preview-promotion-pr
+    needs:
+      - test-release-promotion
+      - test-release-promotion-pr
+      - test-preview-promotion
+      - test-preview-promotion-pr
     uses: unbounded-tech/workflow-vnext-tag/.github/workflows/workflow.yaml@v1.20.2
     secrets:
       DEPLOY_KEY: ${{ secrets.DEPLOY_KEY }}

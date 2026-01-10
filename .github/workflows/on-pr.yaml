@@ -4,8 +4,8 @@ on:
   pull_request:
 
 jobs:
-  test-argocd-promote-helm:
-    name: Test Promotion (Dry Run)
+  test-release-promotion:
+    name: "[Dry Run][Release][Promotion]"
     uses: ./.github/workflows/argocd-promote-helm.yaml
     with:
       project: test-project
@@ -19,8 +19,8 @@ jobs:
     secrets:
       GH_PAT: ${{ secrets.GITHUB_TOKEN }}
 
-  test-argocd-promote-helm--promotion-pr:
-    name: Test Promotion with PR (Dry Run)
+  test-release-promotion-pr:
+    name: "[Dry Run][Release][Promotion PR]"
     uses: ./.github/workflows/argocd-promote-helm.yaml
     with:
       project: test-project
@@ -35,8 +35,8 @@ jobs:
     secrets:
       GH_PAT: ${{ secrets.GITHUB_TOKEN }}
 
-  test-argocd-promote-helm--preview:
-    name: Test Preview (Dry Run)
+  test-preview-promotion:
+    name: "[Dry Run][Preview][Promotion]"
     uses: ./.github/workflows/argocd-promote-helm.yaml
     with:
       project: test-project
@@ -47,8 +47,8 @@ jobs:
     secrets:
       GH_PAT: ${{ secrets.GITHUB_TOKEN }}
 
-  test-argocd-promote-helm--preview-pr:
-    name: Test Preview with PR (Dry Run)
+  test-preview-promotion-pr:
+    name: "[Dry Run][Preview][Promotion PR]"
     uses: ./.github/workflows/argocd-promote-helm.yaml
     with:
       project: test-project
