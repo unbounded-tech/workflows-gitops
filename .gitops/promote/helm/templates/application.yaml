@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: "{{ .Values.project }}-{{ .Values.application.name }}"
+  name: {{ .Values.project }}-{{ .Values.application.name }}
   namespace: argocd
   {{- if .Values.preview }}
   labels:
@@ -10,11 +10,11 @@ metadata:
     - resources-finalizer.argocd.argoproj.io
   {{- end }}
 spec:
-  project: "{{ .Values.project }}"
+  project: {{ .Values.project }}
   source:
-    repoURL: "{{ .Values.application.repository }}"
-    targetRevision: "{{ .Values.application.targetRevision }}"
-    path: "{{ .Values.application.path | default "." }}"
+    repoURL: {{ .Values.application.repository }}
+    targetRevision: {{ .Values.application.targetRevision }}
+    path: {{ .Values.application.path | default "." }}
     {{- if or .Values.application.values .Values.application.image.tag }}
     helm:
       values: |
@@ -26,8 +26,8 @@ spec:
         {{- end }}
     {{- end }}
   destination:
-    server: "{{ .Values.application.destination.server | default "https://kubernetes.default.svc" }}"
-    namespace: "{{ .Values.application.destination.namespace }}"
+    server: {{ .Values.application.destination.server | default "https://kubernetes.default.svc" }}
+    namespace: {{ .Values.application.destination.namespace }}
   syncPolicy:
     automated:
       prune: true
