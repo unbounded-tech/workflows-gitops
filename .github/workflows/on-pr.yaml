@@ -14,8 +14,11 @@ jobs:
       preview: false
       dry_run: true
       values: |
-        image:
-          tag: ${{ github.sha }}
+        env:
+          test: "true"
+          type: "release"
+          method: "promotion"
+          event: "pr"
     secrets:
       GH_PAT: ${{ secrets.GITHUB_TOKEN }}
 
@@ -30,8 +33,11 @@ jobs:
       promotion_pr: true
       dry_run: true
       values: |
-        image:
-          tag: ${{ github.sha }}
+        env:
+          test: "true"
+          type: "release"
+          method: "promotion-pr"
+          event: "pr"
     secrets:
       GH_PAT: ${{ secrets.GITHUB_TOKEN }}
 
@@ -44,6 +50,12 @@ jobs:
       environment_repository: ${{ github.repository }}
       preview: true
       dry_run: true
+      values: |
+        env:
+          test: "true"
+          type: "preview"
+          method: "promotion"
+          event: "pr"
     secrets:
       GH_PAT: ${{ secrets.GITHUB_TOKEN }}
 
@@ -57,5 +69,11 @@ jobs:
       preview: true
       promotion_pr: true
       dry_run: true
+      values: |
+        env:
+          test: "true"
+          type: "preview"
+          method: "promotion-pr"
+          event: "pr"
     secrets:
       GH_PAT: ${{ secrets.GITHUB_TOKEN }}
