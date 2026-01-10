@@ -155,7 +155,7 @@ jobs:
       name: ${{ github.ref_name }}
 
   promote:
-    name: "[Release][Promotion]"
+    name: "Release Promotion"
     needs: release
     uses: unbounded-tech/workflows-gitops/.github/workflows/argocd-promote-helm.yaml@v1
     secrets:
@@ -174,7 +174,7 @@ Use this workflow when you want releases to require approval before being promot
 
 ```yaml
   promote:
-    name: "[Release][Promotion PR]"
+    name: "Release Promotion PR"
     needs: release
     uses: unbounded-tech/workflows-gitops/.github/workflows/argocd-promote-helm.yaml@v1
     secrets:
@@ -223,7 +223,7 @@ jobs:
         ]
 
   preview:
-    name: "[Preview][Promotion PR]"
+    name: "Preview Promotion PR"
     needs:
       - publish-containers
     if: contains(github.event.pull_request.labels.*.name, 'preview')
@@ -281,7 +281,7 @@ jobs:
         ]
 
   preview:
-    name: "[Preview][Promotion PR]"
+    name: "Preview Promotion PR"
     needs:
       - publish-containers
     uses: unbounded-tech/workflows-gitops/.github/workflows/argocd-promote-helm.yaml@v1
@@ -312,7 +312,7 @@ Use `dry_run: true` to test the workflow without making any changes. When trigge
 
 ```yaml
   test-workflow:
-    name: "[Dry Run][Preview][Promotion PR]"
+    name: "Dry Run - Preview Promotion PR"
     uses: unbounded-tech/workflows-gitops/.github/workflows/argocd-promote-helm.yaml@v1
     secrets:
       GH_PAT: ${{ secrets.GITHUB_TOKEN }}

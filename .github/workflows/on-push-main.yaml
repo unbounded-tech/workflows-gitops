@@ -12,7 +12,7 @@ permissions:
 jobs:
 
   test-release-promotion:
-    name: "[Dry Run][Release][Promotion]"
+    name: "Dry Run - Release Promotion"
     uses: ./.github/workflows/argocd-promote-helm.yaml
     with:
       project: test-project
@@ -27,7 +27,7 @@ jobs:
       GH_PAT: ${{ secrets.GITHUB_TOKEN }}
 
   test-release-promotion-pr:
-    name: "[Dry Run][Release][Promotion PR]"
+    name: "Dry Run - Release Promotion PR"
     uses: ./.github/workflows/argocd-promote-helm.yaml
     with:
       project: test-project
@@ -43,7 +43,7 @@ jobs:
       GH_PAT: ${{ secrets.GITHUB_TOKEN }}
 
   test-preview-promotion:
-    name: "[Dry Run][Preview][Promotion]"
+    name: "Dry Run - Preview Promotion"
     uses: ./.github/workflows/argocd-promote-helm.yaml
     with:
       project: test-project
@@ -58,7 +58,7 @@ jobs:
       GH_PAT: ${{ secrets.GITHUB_TOKEN }}
 
   test-preview-promotion-pr:
-    name: "[Dry Run][Preview][Promotion PR]"
+    name: "Dry Run - Preview Promotion PR"
     uses: ./.github/workflows/argocd-promote-helm.yaml
     with:
       project: test-project
