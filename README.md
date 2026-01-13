@@ -317,6 +317,7 @@ Use `dry_run: true` to test the workflow without making any changes. When trigge
     secrets:
       GH_PAT: ${{ secrets.GITHUB_TOKEN }}
     with:
+      auth_mode: app
       project: test-project
       environment_name: test
       environment_repository: ${{ github.repository }}

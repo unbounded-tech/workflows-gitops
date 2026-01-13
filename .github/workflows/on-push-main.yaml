@@ -15,6 +15,7 @@ jobs:
     name: "Dry Run - Release Promotion"
     uses: ./.github/workflows/argocd-promote-helm.yaml
     with:
+      auth_mode: app
       project: test-project
       environment_name: on-push-main-release-promotion
       environment_repository: unbounded-tech/test-gitops
@@ -27,12 +28,14 @@ jobs:
           method: "promotion"
           event: "push-main"
     secrets:
-      GH_PAT: ${{ secrets.GITHUB_TOKEN }}
+      GH_APP_ID: ${{ secrets.GH_APP_ID }}
+      GH_APP_KEY: ${{ secrets.GH_APP_KEY }}
 
   test-release-promotion-pr:
     name: "Dry Run - Release Promotion PR"
     uses: ./.github/workflows/argocd-promote-helm.yaml
     with:
+      auth_mode: app
       project: test-project
       environment_name: on-push-main-release-promotion-pr
       environment_repository: unbounded-tech/test-gitops
@@ -46,12 +49,14 @@ jobs:
           method: "promotion-pr"
           event: "push-main"
     secrets:
-      GH_PAT: ${{ secrets.GITHUB_TOKEN }}
+      GH_APP_ID: ${{ secrets.GH_APP_ID }}
+      GH_APP_KEY: ${{ secrets.GH_APP_KEY }}
 
   test-preview-promotion:
     name: "Dry Run - Preview Promotion"
     uses: ./.github/workflows/argocd-promote-helm.yaml
     with:
+      auth_mode: app
       project: test-project
       environment_name: on-push-main-preview-promotion
       environment_repository: unbounded-tech/test-gitops
@@ -64,12 +69,14 @@ jobs:
           method: "promotion"
           event: "push-main"
     secrets:
-      GH_PAT: ${{ secrets.GITHUB_TOKEN }}
+      GH_APP_ID: ${{ secrets.GH_APP_ID }}
+      GH_APP_KEY: ${{ secrets.GH_APP_KEY }}
 
   test-preview-promotion-pr:
     name: "Dry Run - Preview Promotion PR"
     uses: ./.github/workflows/argocd-promote-helm.yaml
     with:
+      auth_mode: app
       project: test-project
       environment_name: on-push-main-preview-promotion-pr
       environment_repository: unbounded-tech/test-gitops
@@ -83,7 +90,8 @@ jobs:
           method: "promotion-pr"
           event: "push-main"
     secrets:
-      GH_PAT: ${{ secrets.GITHUB_TOKEN }}
+      GH_APP_ID: ${{ secrets.GH_APP_ID }}
+      GH_APP_KEY: ${{ secrets.GH_APP_KEY }}
 
   version-and-tag:
     name: Version and Tag

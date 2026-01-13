@@ -16,6 +16,7 @@ jobs:
     name: "Release Promotion"
     uses: ./.github/workflows/argocd-promote-helm.yaml
     with:
+      auth_mode: app
       project: test-project
       environment_name: on-v-tag-release-promotion
       environment_repository: unbounded-tech/test-gitops
@@ -27,7 +28,8 @@ jobs:
           method: "promotion"
           event: "v-tag"
     secrets:
-      GH_PAT: ${{ secrets.GITHUB_TOKEN }}
+      GH_APP_ID: ${{ secrets.GH_APP_ID }}
+      GH_APP_KEY: ${{ secrets.GH_APP_KEY }}
 
   release:
     needs: 

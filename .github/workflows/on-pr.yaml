@@ -10,6 +10,7 @@ jobs:
     name: "Dry Run - Release Promotion"
     uses: ./.github/workflows/argocd-promote-helm.yaml
     with:
+      auth_mode: app
       project: test-project
       environment_name: on-pr-release-promotion
       environment_repository: unbounded-tech/test-gitops
@@ -22,12 +23,14 @@ jobs:
           method: "promotion"
           event: "pr"
     secrets:
-      GH_PAT: ${{ secrets.GITHUB_TOKEN }}
+      GH_APP_ID: ${{ secrets.GH_APP_ID }}
+      GH_APP_KEY: ${{ secrets.GH_APP_KEY }}
 
   test-release--promotion-pr--dry-run:
     name: "Dry Run - Release Promotion PR"
     uses: ./.github/workflows/argocd-promote-helm.yaml
     with:
+      auth_mode: app
       project: test-project
       environment_name: on-pr-release-promotion-pr
       environment_repository: unbounded-tech/test-gitops
@@ -41,12 +44,14 @@ jobs:
           method: "promotion-pr"
           event: "pr"
     secrets:
-      GH_PAT: ${{ secrets.GITHUB_TOKEN }}
+      GH_APP_ID: ${{ secrets.GH_APP_ID }}
+      GH_APP_KEY: ${{ secrets.GH_APP_KEY }}
 
   test-preview--promotion--dry-run:
     name: "Dry Run - Preview Promotion"
     uses: ./.github/workflows/argocd-promote-helm.yaml
     with:
+      auth_mode: app
       project: test-project
       environment_name: on-pr-preview-promotion
       environment_repository: unbounded-tech/test-gitops
@@ -59,12 +64,14 @@ jobs:
           method: "promotion"
           event: "pr"
     secrets:
-      GH_PAT: ${{ secrets.GITHUB_TOKEN }}
+      GH_APP_ID: ${{ secrets.GH_APP_ID }}
+      GH_APP_KEY: ${{ secrets.GH_APP_KEY }}
 
   test-preview--promotion-pr--dry-run:
     name: "Dry Run - Preview Promotion PR"
     uses: ./.github/workflows/argocd-promote-helm.yaml
     with:
+      auth_mode: app
       project: test-project
       environment_name: on-pr-preview-promotion-pr
       environment_repository: unbounded-tech/test-gitops
@@ -78,12 +85,14 @@ jobs:
           method: "promotion-pr"
           event: "pr"
     secrets:
-      GH_PAT: ${{ secrets.GITHUB_TOKEN }}
+      GH_APP_ID: ${{ secrets.GH_APP_ID }}
+      GH_APP_KEY: ${{ secrets.GH_APP_KEY }}
 
   test-preview--promotion:
     name: "Preview Promotion"
     uses: ./.github/workflows/argocd-promote-helm.yaml
     with:
+      auth_mode: app
       project: test-project
       environment_name: on-pr-preview-promotion
       environment_repository: unbounded-tech/test-gitops
@@ -95,4 +104,5 @@ jobs:
           method: "promotion"
           event: "pr"
     secrets:
-      GH_PAT: ${{ secrets.GITHUB_TOKEN }}
+      GH_APP_ID: ${{ secrets.GH_APP_ID }}
+      GH_APP_KEY: ${{ secrets.GH_APP_KEY }}

@@ -63,9 +63,22 @@ on:
         default: false
         description: "If true, skip commit and push steps (useful for testing)"
 
+      auth_mode:
+        required: false
+        type: string
+        default: "pat"
+        description: "Authentication mode: 'pat' for Personal Access Token (requires GH_PAT secret), 'app' for GitHub App (requires GH_APP_ID and GH_APP_KEY secrets)"
+
     secrets:
       GH_PAT:
-        required: true
+        required: false
+        description: "Personal Access Token for authentication. Required if GH_APP_ID is not provided."
+      GH_APP_ID:
+        required: false
+        description: "GitHub App ID for authentication. If provided with GH_APP_KEY secret, uses GitHub App token instead of GH_PAT."
+      GH_APP_KEY:
+        required: false
+        description: "GitHub App private key. Required if GH_APP_ID is provided."
 
 jobs:
 
@@ -225,15 +238,37 @@ jobs:
           core.info('Resolved configuration:');
           core.info(JSON.stringify({ ...outputs, ...envVars }, null, 2));
 
+    - name: Generate GitHub App Token
+      if: inputs.auth_mode == 'app'
+      id: generate-token
+      uses: actions/create-github-app-token@v2
+      with:
+        app-id: ${{ secrets.GH_APP_ID }}
+        private-key: ${{ secrets.GH_APP_KEY }}
+        owner: ${{ github.repository_owner }}
+
+    - name: Resolve Auth Token
+      id: auth
+      env:
+        APP_TOKEN: ${{ steps.generate-token.outputs.token }}
+        PAT_TOKEN: ${{ secrets.GH_PAT }}
+        AUTH_MODE: ${{ inputs.auth_mode }}
+      run: |
+        if [ "$AUTH_MODE" = "app" ]; then
+          echo "token=$APP_TOKEN" >> $GITHUB_OUTPUT
+        else
+          echo "token=$PAT_TOKEN" >> $GITHUB_OUTPUT
+        fi
+
     - name: Checkout repository
       uses: actions/checkout@v6
 
     - name: Checkout Environment Project
       uses: actions/checkout@v6
-      with: 
+      with:
         path: environment
         repository: ${{ inputs.environment_repository }}
-        token: ${{ secrets.GH_PAT }}
+        token: ${{ steps.auth.outputs.token }}
 
     - name: "[Preview][Promotion PR] Create or Checkout Preview Branch"
       if: inputs.preview && steps.config.outputs.promotion_pr == 'true'
@@ -451,7 +486,7 @@ jobs:
     - name: "[Promotion] Push Environment Changes"
       if: inputs.dry_run == false && steps.config.outputs.promotion_pr != 'true' && steps.commit_changes.outputs.committed_changes == 'true'
       env:
-        GH_TOKEN: ${{ secrets.GH_PAT }}
+        GH_TOKEN: ${{ steps.auth.outputs.token }}
       run: |
         cd environment
         # Detect default branch from remote with fallback
@@ -466,7 +501,7 @@ jobs:
           echo "Warning: Could not detect default branch, falling back to 'main'"
         fi
         echo "Pushing to default branch: ${DEFAULT_BRANCH}"
-        git push https://x-access-token:${{ secrets.GH_PAT }}@github.com/${{ inputs.environment_repository }}.git HEAD:refs/heads/${DEFAULT_BRANCH}
+        git push https://x-access-token:${{ steps.auth.outputs.token }}@github.com/${{ inputs.environment_repository }}.git HEAD:refs/heads/${DEFAULT_BRANCH}
 
     - name: "[Dry Run][Promotion] Push Environment Changes"
       if: inputs.dry_run && steps.config.outputs.promotion_pr != 'true' && steps.commit_changes.outputs.has_changes == 'true'
@@ -483,7 +518,7 @@ jobs:
       with:
         path: environment
         branch: ${{ env.PR_BRANCH }}
-        token: ${{ secrets.GH_PAT }}
+        token: ${{ steps.auth.outputs.token }}
         title: ${{ env.PR_TITLE }}
         body: ${{ env.PR_BODY }}
 
@@ -502,11 +537,11 @@ jobs:
     - name: "[Preview][Promotion PR] Push to Branch"
       if: inputs.dry_run == false && steps.config.outputs.promotion_pr == 'true' && inputs.preview && steps.commit_changes.outputs.committed_changes == 'true'
       env:
-        GH_TOKEN: ${{ secrets.GH_PAT }}
+        GH_TOKEN: ${{ steps.auth.outputs.token }}
         PR_BRANCH: ${{ env.PR_BRANCH }}
       run: |
         cd environment
-        git push https://x-access-token:${{ secrets.GH_PAT }}@github.com/${{ inputs.environment_repository }}.git HEAD:refs/heads/${{ env.PR_BRANCH }}
+        git push https://x-access-token:${{ steps.auth.outputs.token }}@github.com/${{ inputs.environment_repository }}.git HEAD:refs/heads/${{ env.PR_BRANCH }}
 
     - name: "[Dry Run][Preview][Promotion PR] Push to Branch"
       if: inputs.dry_run && steps.config.outputs.promotion_pr == 'true' && inputs.preview && steps.commit_changes.outputs.has_changes == 'true'
@@ -518,7 +553,7 @@ jobs:
     - name: "[Preview][Promotion PR] Create Pull Request"
       if: inputs.dry_run == false && steps.config.outputs.promotion_pr == 'true' && inputs.preview && steps.commit_changes.outputs.committed_changes == 'true'
       env:
-        GH_TOKEN: ${{ secrets.GH_PAT }}
+        GH_TOKEN: ${{ steps.auth.outputs.token }}
         PR_TITLE: ${{ env.PR_TITLE }}
         PR_BODY: ${{ env.PR_BODY }}
         PR_BRANCH: ${{ env.PR_BRANCH }}
