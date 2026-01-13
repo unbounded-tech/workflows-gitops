@@ -90,7 +90,7 @@ jobs:
       GH_APP_ID: ${{ secrets.GH_APP_ID }}
       GH_APP_KEY: ${{ secrets.GH_APP_KEY }}
 
-  test-preview--promotion:
+  test-preview--promotion-pr:
     name: "Preview Promotion"
     uses: ./.github/workflows/argocd-promote-helm.yaml
     with:
@@ -99,6 +99,7 @@ jobs:
       environment_name: on-push-preview-promotion
       environment_repository: unbounded-tech/test-gitops
       preview: true
+      promotion_pr: true
       values: |
         env:
           test: "true"
