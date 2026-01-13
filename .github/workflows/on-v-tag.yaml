@@ -10,15 +10,16 @@ permissions:
 
 jobs:
 
+  # Usually I'd do promotion after a release, but we want it to pass before the release job
+  # to test it properly
   test-release--promotion:
-    name: "Dry Run - Release Promotion"
+    name: "Release Promotion"
     uses: ./.github/workflows/argocd-promote-helm.yaml
     with:
       project: test-project
       environment_name: on-v-tag-release-promotion
       environment_repository: unbounded-tech/test-gitops
       preview: false
-      dry_run: true
       values: |
         env:
           test: "true"

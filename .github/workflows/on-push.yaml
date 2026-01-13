@@ -83,7 +83,7 @@ jobs:
       GH_PAT: ${{ secrets.GITHUB_TOKEN }}
 
   test-preview--promotion:
-    name: "Dry Run - Preview Promotion"
+    name: "Preview Promotion"
     uses: ./.github/workflows/argocd-promote-helm.yaml
     with:
       project: test-project
