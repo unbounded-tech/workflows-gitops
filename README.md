@@ -65,6 +65,7 @@ This adds your application (at a specific version) to the array of applications 
 - Handles pull request creation for manual approval
 - Provides preview support with automatic commenting
 - Integrates with ArgoCD for automated sync
+- Flexible authentication via Personal Access Token or GitHub App
 
 ## Terminology
 
@@ -91,7 +92,40 @@ The workflow uses the following concepts:
 - GitOps repositories for each environment
 - Promotion and Preview Helm charts prepared in your application repository
 - GitHub repository with appropriate permissions
-- Personal Access Token (PAT) with repo and packages write access
+- Authentication configured (either PAT or GitHub App)
+
+## Authentication
+
+The workflow supports two authentication methods for accessing environment repositories:
+
+### Personal Access Token (PAT) - Default
+
+Use a GitHub Personal Access Token with `repo` and `packages:write` permissions.
+
+```yaml
+with:
+  auth_mode: pat  # This is the default, can be omitted
+secrets:
+  GH_PAT: ${{ secrets.YOUR_PAT_SECRET }}
+```
+
+### GitHub App
+
+Use a GitHub App for authentication. This is recommended for organizations as it provides better security, higher rate limits, and more granular permissions.
+
+```yaml
+with:
+  auth_mode: app
+secrets:
+  GH_APP_ID: ${{ secrets.GH_APP_ID }}
+  GH_APP_KEY: ${{ secrets.GH_APP_KEY }}
+```
+
+To set up a GitHub App:
+1. Create a GitHub App in your organization settings
+2. Grant it `contents:write` and `pull_requests:write` permissions on the environment repositories
+3. Install the app on the repositories it needs to access
+4. Store the App ID and private key as secrets
 
 ## Inputs
 
@@ -108,16 +142,19 @@ The workflow uses the following concepts:
 | `preview` | boolean | false | false | If true, promotes a preview (Preview type). Event mode is auto-detected. |
 | `comment` | string | false | Default preview comment | Comment body for previews (PR Event only) |
 | `dry_run` | boolean | false | false | If true, skip commit and push steps (useful for testing) |
+| `auth_mode` | string | false | `pat` | Authentication mode: `pat` for Personal Access Token, `app` for GitHub App |
 
 ## Secrets
 
 | Secret | Required | Description |
 |--------|----------|-------------|
-| `GH_PAT` | true | GitHub Personal Access Token with repo and packages write permissions |
+| `GH_PAT` | When `auth_mode: pat` | GitHub Personal Access Token with repo and packages write permissions |
+| `GH_APP_ID` | When `auth_mode: app` | GitHub App ID for authentication |
+| `GH_APP_KEY` | When `auth_mode: app` | GitHub App private key for authentication |
 
 ## Usage
 
-### [Release][Promotion] - Promote on Version Tag
+### [Release][Promotion] - Promote on Version Tag (PAT Auth)
 
 Use this workflow to promote releases directly to an environment when a new version tag is pushed. Changes are pushed directly to the environment repository.
 
@@ -161,6 +198,27 @@ jobs:
     secrets:
       GH_PAT: ${{ secrets.GH_ORG_ACTIONS_REPO_WRITE_PACKAGES }}
     with:
+      environment_name: your-env
+      environment_repository: your-org/your-env
+      destination_path: .gitops/deploy
+      project: your-env
+      name: your-app
+```
+
+### [Release][Promotion] - Promote on Version Tag (GitHub App Auth)
+
+Same as above but using GitHub App authentication:
+
+```yaml
+  promote:
+    name: "Release Promotion"
+    needs: release
+    uses: unbounded-tech/workflows-gitops/.github/workflows/argocd-promote-helm.yaml@v1
+    secrets:
+      GH_APP_ID: ${{ secrets.GH_APP_ID }}
+      GH_APP_KEY: ${{ secrets.GH_APP_KEY }}
+    with:
+      auth_mode: app
       environment_name: your-env
       environment_repository: your-org/your-env
       destination_path: .gitops/deploy
@@ -317,7 +375,6 @@ Use `dry_run: true` to test the workflow without making any changes. When trigge
     secrets:
       GH_PAT: ${{ secrets.GITHUB_TOKEN }}
     with:
-      auth_mode: app
       project: test-project
       environment_name: test
       environment_repository: ${{ github.repository }}
@@ -334,3 +391,4 @@ Use `dry_run: true` to test the workflow without making any changes. When trigge
 - For previews, the workflow automatically generates unique namespaces and application names based on the PR number or branch name.
 - The workflow merges existing Helm values with new ones to preserve environment-specific configurations.
 - When `promotion_pr: true`, changes are committed to a branch and a PR is created for review before merging.
+- **GitHub App vs PAT**: GitHub Apps are recommended for organizations as they provide better security (no personal token exposure), higher API rate limits, and more granular repository access control.
