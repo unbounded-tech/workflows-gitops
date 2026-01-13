@@ -1,0 +1,111 @@
+name: on-push
+
+on:
+  push:
+    branches:
+      - '**'
+      - '!main'
+
+jobs:
+  test-release-promotion:
+    name: "Dry Run - Release Promotion"
+    uses: ./.github/workflows/argocd-promote-helm.yaml
+    with:
+      auth_mode: app
+      project: test-project
+      environment_name: on-push-release-promotion
+      environment_repository: unbounded-tech/test-gitops
+      preview: false
+      dry_run: true
+      values: |
+        env:
+          test: "true"
+          type: "release"
+          method: "promotion"
+          event: "push"
+          
+    secrets:
+      GH_APP_ID: ${{ secrets.GH_APP_ID }}
+      GH_APP_KEY: ${{ secrets.GH_APP_KEY }}
+
+  test-release-promotion-pr:
+    name: "Dry Run - Release Promotion PR"
+    uses: ./.github/workflows/argocd-promote-helm.yaml
+    with:
+      auth_mode: app
+      project: test-project
+      environment_name: on-push-release-promotion-pr
+      environment_repository: unbounded-tech/test-gitops
+      preview: false
+      promotion_pr: true
+      dry_run: true
+      values: |
+        env:
+          test: "true"
+          type: "release"
+          method: "promotion-pr"
+          event: "push"
+    secrets:
+      GH_APP_ID: ${{ secrets.GH_APP_ID }}
+      GH_APP_KEY: ${{ secrets.GH_APP_KEY }}
+
+  test-preview-promotion:
+    name: "Dry Run - Preview Promotion"
+    uses: ./.github/workflows/argocd-promote-helm.yaml
+    with:
+      auth_mode: app
+      project: test-project
+      environment_name: on-push-preview-promotion
+      environment_repository: unbounded-tech/test-gitops
+      preview: true
+      dry_run: true
+      values: |
+        env:
+          test: "true"
+          type: "preview"
+          method: "promotion"
+          event: "push"
+    secrets:
+      GH_APP_ID: ${{ secrets.GH_APP_ID }}
+      GH_APP_KEY: ${{ secrets.GH_APP_KEY }}
+
+  test-preview-promotion-pr:
+    name: "Dry Run - Preview Promotion PR"
+    uses: ./.github/workflows/argocd-promote-helm.yaml
+    with:
+      auth_mode: app
+      project: test-project
+      environment_name: on-push-preview-promotion-pr
+      environment_repository: unbounded-tech/test-gitops
+      preview: true
+      promotion_pr: true
+      dry_run: true
+      values: |
+        env:
+          test: "true"
+          type: "preview"
+          method: "promotion-pr"
+          event: "push"
+    secrets:
+      GH_APP_ID: ${{ secrets.GH_APP_ID }}
+      GH_APP_KEY: ${{ secrets.GH_APP_KEY }}
+
+  test-preview--promotion-pr:
+    name: "Preview Promotion"
+    uses: ./.github/workflows/argocd-promote-helm.yaml
+    with:
+      auth_mode: app
+      project: test-project
+      environment_name: on-push-preview-promotion
+      environment_repository: unbounded-tech/test-gitops
+      preview: true
+      promotion_pr: true
+      values: |
+        env:
+          test: "true"
+          type: "preview"
+          method: "promotion"
+          event: "push"
+    secrets:
+      GH_APP_ID: ${{ secrets.GH_APP_ID }}
+      GH_APP_KEY: ${{ secrets.GH_APP_KEY }}

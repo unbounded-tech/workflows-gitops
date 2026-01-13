@@ -37,10 +37,20 @@ jobs:
         git commit -m "feat(${{ github.event.repository.name }}): ${{ github.event.repository.name }}-pr-${{ github.event.pull_request.number }}"
 
     - name: Push Preview Env Changes
-      uses: ad-m/github-push-action@master
-      with:
-        github_token: ${{ secrets.GH_ORG_TOKEN }}
-        repository: ${{ inputs.environment_repository }}
+      run: |
+        # Detect default branch from remote with fallback
+        DEFAULT_BRANCH=$(git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's@^refs/remotes/origin/@@')
+        if [ -z "$DEFAULT_BRANCH" ]; then
+          # Fallback: query remote directly
+          DEFAULT_BRANCH=$(git ls-remote --symref origin HEAD 2>/dev/null | grep '^ref:' | sed 's@^ref: refs/heads/@@' | sed 's@\s.*@@')
+        fi
+        if [ -z "$DEFAULT_BRANCH" ]; then
+          # Last resort fallback
+          DEFAULT_BRANCH="main"
+          echo "Warning: Could not detect default branch, falling back to 'main'"
+        fi
+        echo "Pushing to default branch: ${DEFAULT_BRANCH}"
+        git push https://x-access-token:${{ secrets.GH_ORG_TOKEN }}@github.com/${{ inputs.environment_repository }}.git HEAD:refs/heads/${DEFAULT_BRANCH}
 
     - name: Find Comment
       uses: peter-evans/find-comment@v4

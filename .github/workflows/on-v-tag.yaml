@@ -1,0 +1,41 @@
+name: on-v-tag
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+permissions:
+  contents: write
+
+jobs:
+
+  # Usually I'd do promotion after a release, but we want it to pass before the release job
+  # to test it properly
+  test-release--promotion:
+    name: "Release Promotion"
+    uses: ./.github/workflows/argocd-promote-helm.yaml
+    with:
+      auth_mode: app
+      project: test-project
+      environment_name: on-v-tag-release-promotion
+      environment_repository: unbounded-tech/test-gitops
+      preview: false
+      values: |
+        env:
+          test: "true"
+          type: "release"
+          method: "promotion"
+          event: "v-tag"
+    secrets:
+      GH_APP_ID: ${{ secrets.GH_APP_ID }}
+      GH_APP_KEY: ${{ secrets.GH_APP_KEY }}
+
+  release:
+    needs: 
+      - test-release--promotion
+    uses: unbounded-tech/workflow-simple-release/.github/workflows/workflow.yaml@v2.1.1
+    with:
+      tag: ${{ github.ref_name }}
+      name: ${{ github.ref_name }}
+
