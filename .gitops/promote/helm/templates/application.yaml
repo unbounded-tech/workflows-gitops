@@ -3,34 +3,31 @@ kind: Application
 metadata:
   name: {{ .Values.project }}-{{ .Values.application.name }}
   namespace: argocd
-  {{- if .Values.preview }}
-  labels:
-    preview: "true"
   finalizers:
     - resources-finalizer.argocd.argoproj.io
-  {{- end }}
 spec:
   project: {{ .Values.project }}
   source:
+    path: {{ .Values.application.path }}
     repoURL: {{ .Values.application.repository }}
     targetRevision: {{ .Values.application.targetRevision }}
-    path: {{ .Values.application.path | default "." }}
-    {{- if or .Values.application.values .Values.application.image.tag }}
     helm:
+      version: v3
       values: |
+        env:
+          template: default
+        {{- if .Values.preview }}
+        image:
+          tag: {{ .Values.application.image.tag }}
+        {{- else }}
+        {{- end }}
         {{- if .Values.application.values }}
-        {{- .Values.application.values | nindent 8 }}
+        {{ .Values.application.values | nindent 8 }}
         {{- end }}
-        {{- if .Values.application.image.tag }}
-        {{- printf "image:\n  tag: %s" .Values.application.image.tag | nindent 8 }}
-        {{- end }}
-    {{- end }}
   destination:
-    server: {{ .Values.application.destination.server | default "https://kubernetes.default.svc" }}
     namespace: {{ .Values.application.destination.namespace }}
+    server: {{ .Values.application.destination.server }}
   syncPolicy:
     automated:
-      prune: true
       selfHeal: true
-    syncOptions:
-      - CreateNamespace=true
+      prune: true

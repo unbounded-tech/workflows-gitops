@@ -1,15 +1,15 @@
-project: default
-
 application:
-  name: ""
-  repository: ""
+  name: example
+  repository: https://github.com/unbounded-tech/workflows-gitops.git
   targetRevision: main
-  path: "."
-  destination:
-    server: https://kubernetes.default.svc
-    namespace: default
+  path: .gitops/deploy/helm
   values: ""
+  destination:
+    namespace: default
+    server: https://kubernetes.default.svc
   image:
-    tag: ""
+    tag: latest
+
+project: default
 
 preview: false

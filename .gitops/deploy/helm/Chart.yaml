@@ -1,0 +1,6 @@
+# Helm chart.yaml
+apiVersion: v2
+appVersion: "0.0.0-dev"
+description: example resources deployment chart
+name: deployment
+version: v0.0.0-dev

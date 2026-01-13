@@ -1,0 +1,28 @@
+{{- if .Values.preview }}
+
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: something
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: {{ .Values.project }}
+  source:
+    path: .gitops/deploy/helm
+    repoURL: https://github.com/unbounded-tech/something.git
+    targetRevision: main
+    helm:
+      version: v3
+  destination:
+    namespace: {{ .Values.application.destination.namespace }}
+    server: {{ .Values.application.destination.server }}
+  syncPolicy:
+    automated:
+      selfHeal: true
+      prune: true
+
+{{- end }}
