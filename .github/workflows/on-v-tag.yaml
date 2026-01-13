@@ -9,8 +9,30 @@ permissions:
   contents: write
 
 jobs:
+
+  test-release--promotion:
+    name: "Dry Run - Release Promotion"
+    uses: ./.github/workflows/argocd-promote-helm.yaml
+    with:
+      project: test-project
+      environment_name: on-v-tag-release-promotion
+      environment_repository: unbounded-tech/test-gitops
+      preview: false
+      dry_run: true
+      values: |
+        env:
+          test: "true"
+          type: "release"
+          method: "promotion"
+          event: "v-tag"
+    secrets:
+      GH_PAT: ${{ secrets.GITHUB_TOKEN }}
+
   release:
+    needs: 
+      - test-release--promotion
     uses: unbounded-tech/workflow-simple-release/.github/workflows/workflow.yaml@v2.1.1
     with:
       tag: ${{ github.ref_name }}
       name: ${{ github.ref_name }}
+

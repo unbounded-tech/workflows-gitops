@@ -4,13 +4,15 @@ on:
   pull_request:
 
 jobs:
-  test-release-promotion:
+
+  # Release promotions would not normally go in PRs, but we include them here for testing purposes
+  test-release--promotion--dry-run:
     name: "Dry Run - Release Promotion"
     uses: ./.github/workflows/argocd-promote-helm.yaml
     with:
       project: test-project
       environment_name: on-pr-release-promotion
-      environment_repository: ${{ github.repository }}
+      environment_repository: unbounded-tech/test-gitops
       preview: false
       dry_run: true
       values: |
@@ -22,13 +24,13 @@ jobs:
     secrets:
       GH_PAT: ${{ secrets.GITHUB_TOKEN }}
 
-  test-release-promotion-pr:
+  test-release--promotion-pr--dry-run:
     name: "Dry Run - Release Promotion PR"
     uses: ./.github/workflows/argocd-promote-helm.yaml
     with:
       project: test-project
       environment_name: on-pr-release-promotion-pr
-      environment_repository: ${{ github.repository }}
+      environment_repository: unbounded-tech/test-gitops
       preview: false
       promotion_pr: true
       dry_run: true
@@ -41,13 +43,13 @@ jobs:
     secrets:
       GH_PAT: ${{ secrets.GITHUB_TOKEN }}
 
-  test-preview-promotion:
+  test-preview--promotion--dry-run:
     name: "Dry Run - Preview Promotion"
     uses: ./.github/workflows/argocd-promote-helm.yaml
     with:
       project: test-project
       environment_name: on-pr-preview-promotion
-      environment_repository: ${{ github.repository }}
+      environment_repository: unbounded-tech/test-gitops
       preview: true
       dry_run: true
       values: |
@@ -59,13 +61,13 @@ jobs:
     secrets:
       GH_PAT: ${{ secrets.GITHUB_TOKEN }}
 
-  test-preview-promotion-pr:
+  test-preview--promotion-pr--dry-run:
     name: "Dry Run - Preview Promotion PR"
     uses: ./.github/workflows/argocd-promote-helm.yaml
     with:
       project: test-project
       environment_name: on-pr-preview-promotion-pr
-      environment_repository: ${{ github.repository }}
+      environment_repository: unbounded-tech/test-gitops
       preview: true
       promotion_pr: true
       dry_run: true
@@ -74,6 +76,23 @@ jobs:
           test: "true"
           type: "preview"
           method: "promotion-pr"
+          event: "pr"
+    secrets:
+      GH_PAT: ${{ secrets.GITHUB_TOKEN }}
+
+  test-preview--promotion:
+    name: "Dry Run - Preview Promotion"
+    uses: ./.github/workflows/argocd-promote-helm.yaml
+    with:
+      project: test-project
+      environment_name: on-pr-preview-promotion
+      environment_repository: unbounded-tech/test-gitops
+      preview: true
+      values: |
+        env:
+          test: "true"
+          type: "preview"
+          method: "promotion"
           event: "pr"
     secrets:
       GH_PAT: ${{ secrets.GITHUB_TOKEN }}

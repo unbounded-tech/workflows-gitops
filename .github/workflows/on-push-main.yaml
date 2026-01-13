@@ -17,7 +17,7 @@ jobs:
     with:
       project: test-project
       environment_name: on-push-main-release-promotion
-      environment_repository: ${{ github.repository }}
+      environment_repository: unbounded-tech/test-gitops
       preview: false
       dry_run: true
       values: |
@@ -35,7 +35,7 @@ jobs:
     with:
       project: test-project
       environment_name: on-push-main-release-promotion-pr
-      environment_repository: ${{ github.repository }}
+      environment_repository: unbounded-tech/test-gitops
       preview: false
       promotion_pr: true
       dry_run: true
@@ -54,7 +54,7 @@ jobs:
     with:
       project: test-project
       environment_name: on-push-main-preview-promotion
-      environment_repository: ${{ github.repository }}
+      environment_repository: unbounded-tech/test-gitops
       preview: true
       dry_run: true
       values: |
@@ -72,7 +72,7 @@ jobs:
     with:
       project: test-project
       environment_name: on-push-main-preview-promotion-pr
-      environment_repository: ${{ github.repository }}
+      environment_repository: unbounded-tech/test-gitops
       preview: true
       promotion_pr: true
       dry_run: true
