@@ -97,7 +97,7 @@ jobs:
 
     - name: Resolve Configuration
       id: config
-      uses: actions/github-script@v8
+      uses: actions/github-script@v9
       env:
         INPUT_NAME: ${{ inputs.name }}
         INPUT_PROJECT: ${{ inputs.project }}
