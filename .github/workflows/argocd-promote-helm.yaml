@@ -261,10 +261,10 @@ jobs:
         fi
 
     - name: Checkout repository
-      uses: actions/checkout@v6
+      uses: actions/checkout@v7
 
     - name: Checkout Environment Project
-      uses: actions/checkout@v6
+      uses: actions/checkout@v7
       with:
         path: environment
         repository: ${{ inputs.environment_repository }}
