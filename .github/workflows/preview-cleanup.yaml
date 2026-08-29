@@ -23,7 +23,7 @@ jobs:
     steps:
 
     - name: Checkout Preview Environments Project
-      uses: actions/checkout@v6
+      uses: actions/checkout@v7
       with: 
         repository: ${{ inputs.environment_repository }}
         persist-credentials: false
