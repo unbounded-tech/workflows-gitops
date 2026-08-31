@@ -3,6 +3,11 @@ name: on-pr
 on:
   pull_request:
 
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
 jobs:
 
   # Release promotions would not normally go in PRs, but we include them here for testing purposes
@@ -47,6 +52,27 @@ jobs:
       GH_APP_ID: ${{ secrets.GH_APP_ID }}
       GH_APP_KEY: ${{ secrets.GH_APP_KEY }}
 
+  test-release--promotion-pr-merge--dry-run:
+    name: "Dry Run - Release Promotion PR + Merge"
+    uses: ./.github/workflows/argocd-promote-helm.yaml
+    with:
+      auth_mode: app
+      project: test-project
+      environment_name: on-pr-release-promotion-pr-merge
+      environment_repository: unbounded-tech/test-gitops
+      preview: false
+      promotion_mode: pull-request-merge
+      dry_run: true
+      values: |
+        env:
+          test: "true"
+          type: "release"
+          method: "promotion-pr-merge"
+          event: "pr"
+    secrets:
+      GH_APP_ID: ${{ secrets.GH_APP_ID }}
+      GH_APP_KEY: ${{ secrets.GH_APP_KEY }}
+
   test-preview--promotion--dry-run:
     name: "Dry Run - Preview Promotion"
     uses: ./.github/workflows/argocd-promote-helm.yaml
@@ -83,6 +109,27 @@ jobs:
           test: "true"
           type: "preview"
           method: "promotion-pr"
+          event: "pr"
+    secrets:
+      GH_APP_ID: ${{ secrets.GH_APP_ID }}
+      GH_APP_KEY: ${{ secrets.GH_APP_KEY }}
+
+  test-preview--promotion-pr-merge--dry-run:
+    name: "Dry Run - Preview Promotion PR + Merge"
+    uses: ./.github/workflows/argocd-promote-helm.yaml
+    with:
+      auth_mode: app
+      project: test-project
+      environment_name: on-pr-preview-promotion-pr-merge
+      environment_repository: unbounded-tech/test-gitops
+      preview: true
+      promotion_mode: pull-request-merge
+      dry_run: true
+      values: |
+        env:
+          test: "true"
+          type: "preview"
+          method: "promotion-pr-merge"
           event: "pr"
     secrets:
       GH_APP_ID: ${{ secrets.GH_APP_ID }}
